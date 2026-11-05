@@ -1,10 +1,13 @@
-#Add current task here
-
 # ACTIVE TASK
-Analyze the dataset structure and build a basic data loader.
+Generate the complete database schema for the project data without loading full files into context.
 
 # CONSTRAINTS
-* Use the clarifier skill to ensure you understand the requirements.
-* DO NOT read the entire CSV or shapefiles directly. 
-* Write a short Python script using Pandas and GeoPandas to read just the first 5 rows of `Data/ETM/Ticket-Data-2026-03-01.csv` and the basic info of `Public Transport/Metro Rail/Operational_Metro_Stns.shp`.
-* Output the schemas (columns and data types) into the existing `data-schema.md` file.
+* DO NOT attempt to read the raw CSVs or shapefiles directly into your LLM context window.
+* Write a temporary Python script (`temp_schema.py`) using `pandas` and `geopandas`.
+* The script must read only the headers, data types, and the first 2 rows of the following representative files:
+  1. `Data/ETM/Ticket-Data-2026-03-01.csv`
+  2. `Public Transport/Metro Rail/Operational_Metro_Stns.shp`
+  3. `Public Transport/MTC/routes_merged.shp`
+* Have the script format this information cleanly and append it to `data-schema.md`.
+* Execute the script. 
+* Delete `temp_schema.py` once `data-schema.md` is updated.
