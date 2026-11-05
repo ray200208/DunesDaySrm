@@ -1,0 +1,1727 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Marina Ops // CUMTA GRID — MTC Chennai Transit Operations</title>
+<style>
+:root, html[data-theme="dark"] {
+  --bg: #0A0D12;
+  --bg-elev: #0F1319;
+  --surf: #151A22;
+  --surf-sub: #0B0E14;
+  --surf-hover: #1B222D;
+  --line: #222936;
+  --line-strong: #384252;
+  --ink: #F9FAFB;
+  --mut: #9CA3AF;
+  --dim: #6B7280;
+  --ac: #F97316;
+  --ac-hover: #FB923C;
+  --ac-soft: rgba(249, 115, 22, 0.14);
+  --h: #EF4444;
+  --m: #F59E0B;
+  --l: #10B981;
+  --bh-bg: rgba(127, 29, 29, 0.32);
+  --bh-border: rgba(239, 68, 68, 0.45);
+  --bm-bg: rgba(120, 53, 15, 0.32);
+  --bm-border: rgba(245, 158, 11, 0.45);
+  --bl-bg: rgba(6, 78, 59, 0.32);
+  --bl-border: rgba(16, 185, 129, 0.45);
+  --alert-bg: rgba(127, 29, 29, 0.16);
+  --alert-line: #7F1D1D;
+  --sim-bg: rgba(249, 115, 22, 0.10);
+  --sim-line: rgba(249, 115, 22, 0.40);
+  --crush-row: rgba(127, 29, 29, 0.24);
+  --sea: #111C2D;
+  --sea-line: #1E3A5F;
+  --sea-ink: #64748B;
+  color-scheme: dark;
+  box-sizing: border-box;
+}
+html[data-theme="light"] {
+  --bg: #F4F6F9;
+  --bg-elev: #FFFFFF;
+  --surf: #FFFFFF;
+  --surf-sub: #F1F5F9;
+  --surf-hover: #F8FAFC;
+  --line: #E2E8F0;
+  --line-strong: #CBD5E1;
+  --ink: #0F172A;
+  --mut: #475569;
+  --dim: #64748B;
+  --ac: #EA580C;
+  --ac-hover: #F97316;
+  --ac-soft: rgba(234, 88, 12, 0.10);
+  --h: #DC2626;
+  --m: #D97706;
+  --l: #059669;
+  --bh-bg: #FEF2F2;
+  --bh-border: #FECACA;
+  --bm-bg: #FFFBEB;
+  --bm-border: #FDE68A;
+  --bl-bg: #ECFDF5;
+  --bl-border: #A7F3D0;
+  --alert-bg: #FEF2F2;
+  --alert-line: #FCA5A5;
+  --sim-bg: #FFF7ED;
+  --sim-line: #FDBA74;
+  --crush-row: #FEF2F2;
+  --sea: #E0F2FE;
+  --sea-line: #7DD3FC;
+  --sea-ink: #475569;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 14px/1.5 "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+code, .mono {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+button, select, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+.sr { position: absolute; left: -9999px; }
+
+/* ============ Top Tactical Header (Reference Image Match) ============ */
+.top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-elev);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  flex-wrap: wrap;
+}
+.brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 6px;
+}
+.brand-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--ac);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.35);
+}
+.brand-title {
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.cumta-badge {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ac);
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.38);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.sp { flex: 1; }
+.seg {
+  display: inline-flex;
+  background: var(--surf);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+.seg button {
+  border: 0;
+  background: transparent;
+  color: var(--mut);
+  padding: 5px 13px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  transition: background .15s, color .15s;
+}
+.seg button[aria-pressed="true"] {
+  background: var(--ac);
+  color: #ffffff;
+}
+.nav {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.nav button {
+  border: 0;
+  background: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: var(--mut);
+  font-size: 13.5px;
+  font-weight: 500;
+  position: relative;
+}
+.nav button:hover { color: var(--ink); }
+.nav button[aria-current="page"] {
+  color: var(--ac);
+  font-weight: 600;
+  background: rgba(249, 115, 22, 0.08);
+}
+.nav button[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 2px;
+  background: var(--ac);
+  border-radius: 2px;
+}
+.rec-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--h);
+  margin-left: 5px;
+  vertical-align: middle;
+}
+.btn {
+  border: 1px solid var(--line);
+  background: var(--surf);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 6px 13px;
+  font-weight: 500;
+  font-size: 13px;
+  transition: border-color .15s, background .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+.btn:hover {
+  border-color: var(--line-strong);
+  background: var(--surf-hover);
+}
+.btn.pri {
+  background: var(--ac);
+  color: #fff;
+  border-color: var(--ac);
+  font-weight: 600;
+}
+.btn.pri:hover {
+  background: var(--ac-hover);
+  border-color: var(--ac-hover);
+}
+.btn.sm { padding: 4px 10px; font-size: 12px; }
+select, input, textarea {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: var(--surf);
+  color: var(--ink);
+  font-size: 13px;
+}
+select:hover, input:hover { border-color: var(--line-strong); }
+
+main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 22px 24px 48px;
+}
+
+/* ============ Urgent Alert Banner (Red Glow Match) ============ */
+.alert {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 11px 16px;
+  border: 1px solid var(--alert-line);
+  background: var(--alert-bg);
+  box-shadow: 0 0 28px rgba(239, 68, 68, 0.12);
+  border-radius: 12px;
+  margin-bottom: 22px;
+}
+.alert-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--h);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.alert p { margin: 0; flex: 1; min-width: 220px; font-size: 13.5px; }
+.detail {
+  margin: -12px 0 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surf);
+}
+
+/* ============ Risk Badges ============ */
+.badge {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 11.5px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.b-H { border-color: var(--bh-border); background: var(--bh-bg); color: #F87171; }
+.b-H i { color: var(--h); }
+.b-M { border-color: var(--bm-border); background: var(--bm-bg); color: #FBBF24; }
+.b-M i { color: var(--m); }
+.b-L { border-color: var(--bl-border); background: var(--bl-bg); color: #34D399; }
+.b-L i { color: var(--l); }
+.badge i { font-style: normal; font-size: 10px; }
+
+.chip {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--mut);
+  border: 1px dashed var(--line-strong);
+  border-radius: 5px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+
+/* ============ 4 KPI Summary Tiles (Reference Image Match) ============ */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin: 16px 0 26px;
+}
+@media (max-width: 920px) {
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+  .tiles { grid-template-columns: 1fr; }
+}
+.tile {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: var(--surf);
+}
+.tile span {
+  display: block;
+  color: var(--mut);
+  font-size: 12.5px;
+  margin-bottom: 8px;
+}
+.tile b {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+.tile b .sym-h { color: var(--h); font-size: 18px; }
+.tile b .sym-m { color: var(--m); font-size: 18px; }
+.tile b.val-h { color: #F87171; }
+.tile b.val-m { color: #FBBF24; }
+.tile b.val-ac { color: var(--ac); }
+
+h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px; }
+h2 { font-size: 16px; font-weight: 700; margin: 0 0 10px; }
+h3 { font-size: 14px; font-weight: 600; margin: 12px 0 6px; }
+.mut { color: var(--mut); }
+
+/* ============ Depot Pill Filter Row (White Active Pill Match) ============ */
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0 16px;
+  max-height: 112px;
+  overflow-y: auto;
+  padding: 2px 0;
+}
+.chips button {
+  border: 1px solid var(--line);
+  background: var(--surf);
+  color: var(--mut);
+  border-radius: 999px;
+  padding: 6px 15px;
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: all .15s;
+}
+.chips button:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+.chips button[aria-pressed="true"] {
+  background: #FFFFFF;
+  color: #0A0D12;
+  border-color: #FFFFFF;
+  font-weight: 700;
+}
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surf);
+}
+
+/* ============ Route Cards Grid (Reference Image Match) ============ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surf);
+  padding: 16px;
+  transition: border-color .15s, transform .15s, box-shadow .15s;
+}
+.card:hover {
+  border-color: var(--line-strong);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+.card .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.card-sub {
+  color: var(--mut);
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+.map {
+  width: 100%;
+  display: block;
+  background: var(--surf-sub);
+  border: 1px solid #1E2532;
+  border-radius: 10px;
+}
+.card-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 4px;
+  font-size: 12.5px;
+}
+.card-metric {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  color: var(--mut);
+}
+.card-link {
+  color: var(--ac);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ============ Tier 2 & Tier 3 Layouts & Tables ============ */
+.route-layout {
+  display: grid;
+  grid-template-columns: 1.35fr minmax(340px, 450px);
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 920px) {
+  .route-layout, .recs, .two { grid-template-columns: 1fr !important; }
+}
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mut);
+  font-weight: 600;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line-strong);
+  background: var(--surf-sub);
+}
+td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+td button.r {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  padding: 2px 0;
+  font-weight: 600;
+  color: var(--ac);
+}
+tr.clickable-row { cursor: pointer; transition: background .12s; }
+tr.clickable-row:hover td { background: var(--ac-soft); }
+tr.sel td { background: var(--ac-soft); }
+tr.crush-row td { background: var(--crush-row); }
+tr.crush-row td.crush-cell { color: #F87171; font-weight: 700; }
+.exp td { padding: 12px 14px; background: var(--surf-sub); }
+
+.legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 10px 0 4px;
+  font-size: 12px;
+  color: var(--mut);
+}
+.recs {
+  display: grid;
+  grid-template-columns: 330px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.rl button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: var(--surf);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.rl button:hover { border-color: var(--line-strong); }
+.rl button[aria-current="true"] {
+  border-color: var(--ac);
+  box-shadow: inset 3px 0 0 var(--ac);
+  background: var(--surf-hover);
+}
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  background: var(--surf);
+}
+dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 8px 12px;
+}
+dt { color: var(--mut); font-size: 13px; }
+dd { margin: 0; font-size: 13.5px; }
+.q { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.q button {
+  border: 1px solid var(--line);
+  background: var(--surf-sub);
+  border-radius: 999px;
+  padding: 5px 13px;
+  font-size: 12.5px;
+}
+.q button:hover { border-color: var(--line-strong); }
+.q button[aria-pressed="true"] {
+  border-color: var(--ac);
+  background: var(--ac-soft);
+  color: var(--ac);
+  font-weight: 600;
+}
+.ans {
+  padding: 12px 14px;
+  background: var(--surf-sub);
+  border-radius: 10px;
+  border-left: 3px solid var(--ac);
+  line-height: 1.55;
+}
+.simnote {
+  padding: 10px 14px;
+  border: 1px solid var(--sim-line);
+  background: var(--sim-bg);
+  border-radius: 10px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--ac);
+}
+.two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.skel {
+  height: 140px;
+  border-radius: 14px;
+  background: var(--surf);
+  border: 1px solid var(--line);
+}
+.empty {
+  padding: 32px;
+  text-align: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: 14px;
+  color: var(--mut);
+}
+.tier-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+dialog {
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  padding: 22px;
+  width: min(480px, 92vw);
+  background: var(--surf);
+  color: var(--ink);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
+}
+dialog::backdrop { background: rgba(5, 7, 11, 0.72); }
+label { display: block; margin: 10px 0 4px; font-weight: 600; font-size: 13px; }
+dialog select, dialog input, dialog textarea { width: 100%; }
+.bar-wrap {
+  width: 100%;
+  max-width: 110px;
+  height: 8px;
+  background: var(--surf-sub);
+  border-radius: 4px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.bar-fill { height: 100%; border-radius: 4px; }
+.gmaps-box {
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  background: rgba(15, 23, 42, 0.65);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 14px;
+}
+.gmaps-hubs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.gmaps-hub {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  background: var(--surf);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  text-decoration: none;
+}
+.gmaps-hub:hover { border-color: var(--ac); color: var(--ac); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const DOW_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const HOURS_24 = Array.from({ length: 24 }, (_, h) => ({
+  h,
+  label: `${String(h).padStart(2, '0')}:00–${String((h + 1) % 24).padStart(2, '0')}:00`
+}));
+
+const MODES = {
+  MTC: { label: 'MTC bus network', groupLabel: 'Depot', noun: 'route' },
+  Metro: { label: 'CMRL Metro network', groupLabel: 'Corridor', noun: 'line' },
+  MRTS: { label: 'MRTS Suburban network', groupLabel: 'Line', noun: 'line' }
+};
+
+/* ============ FastAPI Service Layer ============ */
+const api = {
+  routes: async (mode, depot, dow, hour, risk, search) => {
+    const qs = new URLSearchParams({
+      mode: mode || 'MTC',
+      depot: depot || 'ALL',
+      day_of_week: dow ?? 3,
+      hour: hour ?? 18,
+      risk: risk || 'ALL',
+      search: search || ''
+    });
+    return (await fetch('/api/routes?' + qs.toString())).json();
+  },
+  tier2Route: async (routeId, depot, dow) => {
+    const qs = new URLSearchParams({ depot: depot || '', day_of_week: dow ?? 3 });
+    return (await fetch(`/api/route/${encodeURIComponent(routeId)}?` + qs.toString())).json();
+  },
+  tier3Hour: async (routeId, hour, depot, dow) => {
+    const qs = new URLSearchParams({ depot: depot || '', day_of_week: dow ?? 3 });
+    return (await fetch(`/api/route/${encodeURIComponent(routeId)}/hour/${hour}?` + qs.toString())).json();
+  },
+  alert: async (mode) => (await fetch('/api/alert?mode=' + encodeURIComponent(mode))).json(),
+  recs: async (mode) => (await fetch('/api/recs?mode=' + encodeURIComponent(mode))).json(),
+  bottlenecks: async () => (await fetch('/api/bottlenecks')).json(),
+  bunching: async () => (await fetch('/api/bunching')).json(),
+  incidents: async () => (await fetch('/api/incidents')).json(),
+  submitIncident: async (i) => (await fetch('/api/incidents', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(i)
+  })).json(),
+  simulate: async (payload) => (await fetch('/api/simulate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })).json(),
+  xaiExplain: async (payload) => (await fetch('/api/xai/explain', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })).json()
+};
+
+const XAI_QUESTIONS = [
+  { key: 'why_flagged', label: 'Why was this route & hour flagged?' },
+  { key: 'confidence', label: 'How accurate is the XGBoost model?' },
+  { key: 'simulation_impact', label: 'What is the impact of +1 bus or short-turn?' },
+  { key: 'corridor_logic', label: 'Why consolidate via Master Depot?' }
+];
+
+const RISK = {
+  H: { l: 'High (>120% crush)', short: 'High', g: '▲', c: 'var(--h)' },
+  M: { l: 'Medium (100–120%)', short: 'Medium', g: '◆', c: 'var(--m)' },
+  L: { l: 'Low (<100%)', short: 'Low', g: '●', c: 'var(--l)' }
+};
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const cnt = (s, k) => [...String(s || '')].filter(c => c == k).length;
+const ACT = {
+  add: { l: 'Inject standby buses (+2 runs)', f: .74, trips: 2 },
+  short: { l: 'Short-turn shuttle loop (+1 run)', f: .84, trips: 1 },
+  stagger: { l: 'Hold & stagger departures by 3 min', f: .88, trips: 0 }
+};
+const Badge = (k, full = false) => {
+  const rk = RISK[k] || RISK.L;
+  return `<span class="badge b-${k || 'L'}"><i aria-hidden="true">${rk.g}</i>${full ? rk.l : rk.short}</span>`;
+};
+
+const savedTheme = localStorage.getItem('dd_theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+
+const S = {
+  theme: savedTheme,
+  mode: 'MTC',
+  tab: 'net',
+  tier: 1,           // 1 = Network Home, 2 = Dedicated Route 24h Page, 3 = Dedicated Hour Stop-Segment & Bus Run Inspector
+  dow: 3,            // 0 = Monday .. 6 = Sunday (default 3 = Thursday)
+  hour: 18,          // 0..23 operating hour filter (default 18:00–19:00 matching reference screenshot)
+  depot: 'ALL',      // 'ALL' or depot_code ('AY', 'KA', 'AN', etc.)
+  riskFilter: 'ALL', // 'ALL', 'CRITICAL', 'HIGH', 'NORMAL'
+  search: '',
+  cardLimit: 60,
+  totalRoutes: 0,
+  kpi: { critical_count: 0, high_count: 0, normal_count: 0, avg_pressure_pct: 0 },
+  depots: [],
+  shpBounds: null,
+  items: [],
+  tier2Data: null,
+  tier3Data: null,
+  loading: true,
+  tierLoading: false,
+  rec: null,
+  sim: null,
+  simData: null,
+  tier3Sim: null,
+  q: null,
+  xaiAns: null,
+  xaiLoading: false,
+  alert: false,
+  modal: false,
+  sent: null,
+  al: null,
+  recs: [],
+  bottlenecks: [],
+  selBottleneck: 0,
+  bunching: [],
+  selBunching: null,
+  inc: []
+};
+
+/* ============ Header & Global Controls (Reference Image Match) ============ */
+function Header() {
+  return `<header class="top">
+    <div class="brand-wrap">
+      <span class="brand-icon" aria-hidden="true">🚌</span>
+      <span class="brand-title">Marina Ops</span>
+      <span class="cumta-badge">CUMTA GRID</span>
+    </div>
+    <div class="seg" role="group" aria-label="Transport mode">
+      ${Object.keys(MODES).map(m => `<button data-a="mode" data-v="${m}" aria-pressed="${S.mode == m}">${m}</button>`).join('')}
+    </div>
+    <nav class="nav" aria-label="Sections">
+      <button data-a="tab" data-v="net" ${S.tab == 'net' ? 'aria-current="page"' : ''}>Network${S.tier > 1 ? ` (Tier ${S.tier})` : ''}</button>
+      <button data-a="tab" data-v="rec" ${S.tab == 'rec' ? 'aria-current="page"' : ''}>Recommendations<span class="rec-dot" aria-hidden="true"></span></button>
+      <button data-a="tab" data-v="diag" ${S.tab == 'diag' ? 'aria-current="page"' : ''}>Corridor Diagnostics</button>
+    </nav>
+    <span class="sp"></span>
+    <label class="sr" for="dow">Day of Week</label>
+    <select id="dow" title="Day of Week (Mon–Sun)">
+      ${DOW_NAMES.map((d, i) => `<option value="${i}" ${S.dow == i ? 'selected' : ''}>${d}</option>`).join('')}
+    </select>
+    <label class="sr" for="hour">Operating Hour (24h)</label>
+    <select id="hour" title="Operating Hour (00:00–23:00)">
+      ${HOURS_24.map(o => `<option value="${o.h}" ${S.hour == o.h ? 'selected' : ''}>${o.label}</option>`).join('')}
+    </select>
+    <button class="btn" data-a="report"><span style="color:var(--ac);font-weight:700">⊕</span> Report incident</button>
+    <button class="btn" data-a="theme" title="Toggle dark/light mode">👤 Operations Lead ▾</button>
+  </header>`;
+}
+
+function AlertBanner() {
+  if (!S.al || !S.al.text) return '';
+  return `<div class="alert" role="status">
+    <span class="alert-pill"><i aria-hidden="true" style="font-style:normal">▲</i> Urgent</span>
+    <p>${esc(S.al.text)} <span class="chip">XGBoost R²=0.81</span> <span class="chip">ETM Live</span></p>
+    <button class="btn sm" data-a="alert" aria-expanded="${S.alert}">${S.alert ? 'Hide details ▴' : 'View details ▾'}</button>
+  </div>
+  ${S.alert ? `<div class="detail">
+    Forecast demand exceeds seated bus capacity (65 seats/bus) on peak arterial stages. Inspect the AI Dispatch &amp; Corridor Consolidator action plan.
+    <button class="btn pri sm" data-a="openrec" data-v="${esc(S.al.rec)}" style="margin-left:10px">Open recommendation →</button>
+  </div>` : ''}`;
+}
+
+/* ============ Geographically Projected Curved SVG Map (routes_merged.shp) ============ */
+function MapView(r, seg, o = {}) {
+  const m = o.mini ? 1.55 : 1.15;
+  const s = r.stops || [];
+  const paths = r.segment_paths || [];
+  const segStr = String(seg || 'LLLLL');
+  let g = '', n = '';
+
+  for (let i = 0; i < s.length - 1; i++) {
+    const k = segStr[i] || 'L', a = s[i], b = s[i + 1];
+    const rk = RISK[k] || RISK.L;
+    const sw = (k == 'H' ? 2.4 : 1.75) * (o.mini ? 1.15 : 0.95);
+    if (paths[i]) {
+      g += `<path d="${paths[i]}" fill="none" stroke="${rk.c}" stroke-width="${sw.toFixed(2)}" stroke-linecap="round" stroke-linejoin="round"><title>${esc(a.name)} → ${esc(b.name)}: ${rk.l}</title></path>`;
+    } else {
+      g += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${rk.c}" stroke-width="${sw.toFixed(2)}" stroke-linecap="round"><title>${esc(a.name)} → ${esc(b.name)}: ${rk.l}</title></line>`;
+    }
+    if (!o.mini) {
+      g += `<text x="${((a.x + b.x) / 2).toFixed(1)}" y="${((a.y + b.y) / 2 - 2.3).toFixed(1)}" text-anchor="middle" font-size="2.5" font-weight="700" fill="${rk.c}">${rk.g}</text>`;
+    }
+  }
+
+  s.forEach((p, idx) => {
+    n += `<circle cx="${p.x}" cy="${p.y}" r="${o.mini ? 1.25 : 1.45}" fill="#0B0E14" stroke="#F9FAFB" stroke-width=".65"/>`;
+    if (!o.mini) {
+      const yOff = (idx % 2 == 0) ? 4.2 : -2.6;
+      n += `<text x="${p.x}" y="${Math.max(4.5, Math.min(57.5, p.y + yOff))}" text-anchor="middle" font-size="2.1" fill="#E5E7EB">${esc(p.name)}</text>`;
+    }
+  });
+
+  return `<svg class="map" viewBox="0 0 100 60" role="img" aria-label="Projected shapefile map of ${esc(r.name)}">
+    <path d="M88 0 C85 18, 86 38, 89 60 L100 60 L100 0 Z" fill="var(--sea)" stroke="var(--sea-line)" stroke-width="0.4"/>
+    <text x="91" y="7.5" font-size="2.0" fill="var(--sea-ink)" text-anchor="middle">Bay of Bengal</text>
+    ${!o.mini ? `<text x="3.5" y="57.5" font-size="1.75" fill="var(--mut)">WGS84 Shapefile · Data/Public Transport/MTC/routes_merged.shp</text>` : ''}
+    ${g}${n}
+  </svg>`;
+}
+
+const Legend = () => `<div class="legend" aria-label="Legend">
+  ${['H', 'M', 'L'].map(k => `<span>${Badge(k, true)}</span>`).join('')}
+  <span>Real curved geometry from <code>routes_merged.shp</code></span>
+</div>`;
+
+/* ============ Google Maps Live Corridor Grounding Card (Tier 2 & Tier 3) ============ */
+function GoogleMapsGroundingPanel(gm, routeNum) {
+  if (!gm) return '';
+  const hubs = gm.multimodal_hubs || [];
+  return `<div class="gmaps-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <div>
+        <b style="color:#60A5FA;font-size:13px">🌐 Google Maps Live Corridor Grounding · Route ${esc(routeNum)}</b>
+        <div class="mut" style="font-size:12px;margin-top:2px">Verify live arterial road traffic, transit directions &amp; multimodal transfer hubs in Chennai</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn sm pri" href="${esc(gm.corridor_directions_url)}" target="_blank" rel="noopener">Open Full Corridor on Google Maps ↗</a>
+        ${gm.bottleneck_directions_url ? `<a class="btn sm" href="${esc(gm.bottleneck_directions_url)}" target="_blank" rel="noopener">Inspect Peak Bottleneck (${esc(gm.bottleneck_label)}) ↗</a>` : ''}
+      </div>
+    </div>
+    ${hubs.length ? `<div class="gmaps-hubs">
+      <span class="mut" style="font-size:11.5px;align-self:center">Verified Multimodal Hubs:</span>
+      ${hubs.map(h => `<a class="gmaps-hub" href="${esc(h.google_maps_url)}" target="_blank" rel="noopener" title="${esc(h.modes)}">📍 ${esc(h.hub_name)} <span class="mut">(${esc(h.modes)})</span> ↗</a>`).join('')}
+    </div>` : ''}
+  </div>`;
+}
+
+/* ============ TIER 1: Network Overview (Matching Reference Image) ============ */
+function SummaryTiles() {
+  const hrLabel = HOURS_24[S.hour]?.label || '18:00–19:00';
+  return `<div class="tiles">
+    <div class="tile">
+      <span>High-risk forecasts · ${hrLabel}</span>
+      <b class="val-h"><span class="sym-h">▲</span>${S.kpi.critical_count}</b>
+    </div>
+    <div class="tile">
+      <span>Medium-risk forecasts</span>
+      <b class="val-m"><span class="sym-m">◆</span>${S.kpi.high_count}</b>
+    </div>
+    <div class="tile">
+      <span>Open incident reports</span>
+      <b>${S.inc.length} <span class="mut" style="font-size:12px;font-weight:400">(${S.totalRoutes} active routes)</span></b>
+    </div>
+    <div class="tile">
+      <span>Avg network demand pressure</span>
+      <b class="val-ac">${S.kpi.avg_pressure_pct}%</b>
+    </div>
+  </div>`;
+}
+
+function Tier1NetworkPage() {
+  const M = MODES[S.mode];
+  const dowLabel = DOW_NAMES[S.dow];
+  const hrLabel = HOURS_24[S.hour]?.label;
+  const visibleItems = S.depot == 'ALL' ? S.items.slice(0, S.cardLimit) : S.items;
+
+  return `<h1>${M.label}</h1>
+  <p class="mut" style="margin:2px 0 0">Forecast risk for ${hrLabel} · ${dowLabel} <span class="chip">425,681 ETM Cube</span> <span class="chip">routes_merged.shp</span></p>
+  ${SummaryTiles()}
+
+  <div class="section-head">
+    <h2 style="margin:0">Routes</h2>
+    ${S.mode == 'MTC' ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <select id="riskSel" aria-label="Filter by risk">
+        <option value="ALL" ${S.riskFilter == 'ALL' ? 'selected' : ''}>All risk levels (${S.totalRoutes})</option>
+        <option value="CRITICAL" ${S.riskFilter == 'CRITICAL' ? 'selected' : ''}>▲ High risk (&gt;120%)</option>
+        <option value="HIGH" ${S.riskFilter == 'HIGH' ? 'selected' : ''}>◆ Medium risk (100–120%)</option>
+        <option value="NORMAL" ${S.riskFilter == 'NORMAL' ? 'selected' : ''}>● Low risk (&lt;100%)</option>
+      </select>
+      <form id="searchFrm" style="display:flex;gap:6px">
+        <input id="searchInp" name="q" type="search" value="${esc(S.search)}" placeholder="Search route (21G, 29C, 47A, 102K)…" style="width:230px">
+        <button class="btn sm" type="submit">Search</button>
+        ${(S.depot != 'ALL' || S.riskFilter != 'ALL' || S.search) ? `<button class="btn sm" type="button" data-a="clearfilters">Reset</button>` : ''}
+      </form>
+    </div>` : ''}
+  </div>
+
+  ${S.mode == 'MTC' ? `<div class="chips" role="group" aria-label="Depot filter pills">
+    <button data-a="depot" data-v="ALL" aria-pressed="${S.depot == 'ALL'}">All depots</button>
+    ${S.depots.map(d => `<button data-a="depot" data-v="${esc(d.depot_code)}" aria-pressed="${S.depot == d.depot_code}">${esc(d.short_name)} (${esc(d.depot_code)})</button>`).join('')}
+  </div>` : ''}
+
+  ${S.loading
+    ? `<div class="grid"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>`
+    : visibleItems.length
+      ? `<div class="grid">${visibleItems.map(r => {
+          const shortDepot = String(r.group || r.depot || '').replace(/\s*\([A-Z0-9]+\)$/, '');
+          return `<button class="card" data-a="openroute" data-v="${esc(r.id)}" data-depot="${esc(r.depot_code || '')}">
+            <div class="row">
+              <div>
+                <div class="card-title">${esc(r.route)} · ${esc(r.name)}</div>
+                <div class="card-sub">Depot: ${esc(shortDepot)} · ${r.stage_span || 6} stops</div>
+              </div>
+              ${Badge(r.risk)}
+            </div>
+            ${MapView(r, r.seg, { mini: 1 })}
+            <div class="card-foot">
+              <span class="card-metric">Pred: <b style="color:var(--ink)">${r.pred} pax</b> · Cap: ${r.cap} (${r.pressure_pct}%)</span>
+              <span class="card-link">View details →</span>
+            </div>
+          </button>`;
+        }).join('')}</div>
+        ${S.depot == 'ALL' && S.items.length > S.cardLimit ? `<p style="text-align:center;margin-top:20px">
+          <button class="btn pri" data-a="morecards">Show +80 more routes (showing ${visibleItems.length} of ${S.items.length})</button>
+          <button class="btn" data-a="allcards" style="margin-left:8px">Show all ${S.items.length} routes</button>
+        </p>` : ''}`
+      : `<div class="empty">No routes match the current filter (${esc(S.depot)} · ${esc(S.riskFilter)}).<br><button class="btn" data-a="clearfilters" style="margin-top:10px">Reset filters</button></div>`}
+  ${Incidents()}`;
+}
+
+/* ============ TIER 2: Dedicated Route 24-Hour Timeline Page ============ */
+function Tier2RoutePage() {
+  if (S.tierLoading || !S.tier2Data) {
+    return `<div class="tier-nav"><button class="btn pri" data-a="backtier1">← Back to Network</button></div><div class="skel"></div>`;
+  }
+  const r = S.tier2Data;
+  const tl = r.timeline || [];
+
+  return `<div class="tier-nav">
+    <button class="btn pri" data-a="backtier1">← Back to Network</button>
+    <span class="mut">Tier 1 Network</span> <span class="mut">/</span> <b>Tier 2: Route ${esc(r.route_num)} (${esc(r.depot_code)}) — 24-Hour Curve</b>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+    <div>
+      <h1>Route ${esc(r.route_num)} · ${esc(r.name)}</h1>
+      <p class="mut" style="margin:3px 0">
+        Depot: <b>${esc(r.depot_name)}</b> · Span: <b class="mono">${r.route_km} km</b> (${r.stage_span} stages) · Active Fleet: <b class="mono">${r.active_fleet} buses</b> · Day: <b>${esc(r.day_name)}</b>
+      </p>
+    </div>
+    <div style="text-align:right">
+      ${Badge(r.risk, true)}
+      <div class="mut" style="font-size:12px;margin-top:4px">24h Peak: <b class="mono" style="color:var(--ink)">${r.max_demand_pressure_pct}%</b> at ${esc(r.peak_time_window)}</div>
+    </div>
+  </div>
+
+  <div class="route-layout">
+    <div class="panel" style="margin-bottom:0">
+      <h2>24-Hour Demand &amp; Capacity Timeline (${esc(r.day_name)}, 00:00 – 23:00)</h2>
+      <p class="mut" style="font-size:12.5px;margin-top:0">Click any hour row below to open <b>Tier 3 (Hourly Bus Runs &amp; Consecutive Stop-to-Stop Segments)</b>.</p>
+      <div style="max-height:540px;overflow-y:auto;border:1px solid var(--line);border-radius:10px">
+        <table>
+          <thead>
+            <tr>
+              <th>Hour Window</th>
+              <th>Observed</th>
+              <th>Predicted (XGB)</th>
+              <th>Active Runs</th>
+              <th>Capacity</th>
+              <th>Pressure %</th>
+              <th>Risk</th>
+              <th>Tier 3 Drill-Down</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tl.map(h => `<tr class="clickable-row ${h.hour == S.hour ? 'sel' : ''}" data-a="opentier3" data-v="${h.hour}">
+              <td class="mono"><b>${esc(h.time_window)}</b></td>
+              <td class="mono">${h.observed_demand} pax</td>
+              <td class="mono"><b>${h.predicted_demand} pax</b></td>
+              <td class="mono">${h.active_trips} runs</td>
+              <td class="mono">${h.capacity} seats</td>
+              <td class="mono"><b>${h.demand_pressure_pct}%</b></td>
+              <td>${Badge(h.risk)}</td>
+              <td><button class="btn sm pri" data-a="opentier3" data-v="${h.hour}">Inspect Hops &amp; Runs →</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>Shapefile Corridor Geometry (${esc(r.route_num)})</h2>
+        <p class="mut" style="font-size:12px;margin-top:0">${esc(r.origin_stop)} ↔ ${esc(r.destination_stop)}</p>
+        ${MapView(r, r.seg, { mini: 0 })}
+        ${Legend()}
+        ${GoogleMapsGroundingPanel(r.google_maps, r.route_num)}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============ XAI Panel (Used on Tier 3 & Recommendations) ============ */
+function XAIPanel(routeId, depotCode, hourVal) {
+  return `<div class="panel" style="margin-top:16px">
+    <h2>Ask about this recommendation <span class="chip">Live XAI Engine</span></h2>
+    <p class="mut" style="font-size:12.5px;margin:2px 0 10px">Queries <code>POST /api/xai/explain</code> for Route <b>${esc(routeId)}</b> (${DOW_NAMES[S.dow]}, ${HOURS_24[hourVal]?.label || ''}) using real XGBoost telemetry and ETM stage logs.</p>
+    <div class="q" role="group" aria-label="Sample XAI questions">
+      ${XAI_QUESTIONS.map(q => `<button data-a="askxai" data-route="${esc(routeId)}" data-depot="${esc(depotCode || '')}" data-hour="${hourVal}" data-v="${q.key}" aria-pressed="${S.q == q.key}">${esc(q.label)}</button>`).join('')}
+    </div>
+    <form id="xaifrm" data-route="${esc(routeId)}" data-depot="${esc(depotCode || '')}" data-hour="${hourVal}" style="display:flex;gap:8px;margin:10px 0">
+      <input name="custom_query" type="text" placeholder="Ask dispatcher question (e.g. Where should short-turn buses loop on ${esc(routeId)}?)" style="flex:1">
+      <button class="btn pri" type="submit">${S.xaiLoading ? 'Analyzing…' : 'Ask XAI'}</button>
+    </form>
+    ${S.xaiLoading
+      ? `<div class="ans" role="status">Querying DunesDay XAI Engine for Route ${esc(routeId)}…</div>`
+      : S.xaiAns
+        ? `<div class="ans" role="status">
+            <div style="font-size:11.5px;color:var(--mut);margin-bottom:6px">Source: <b>${esc(S.xaiAns.source || 'DunesDay XAI Engine')}</b> · Peak Bottleneck: <code>${esc(S.xaiAns.metrics?.peak_segment || 'N/A')}</code> (${S.xaiAns.metrics?.peak_segment_pax || ''} pax)</div>
+            ${esc(S.xaiAns.answer)}
+          </div>`
+        : '<p class="mut" style="margin:4px 0 0;font-size:12.5px">Select a question chip above or ask a custom question to inspect live model reasoning and stage-level evidence.</p>'}
+  </div>`;
+}
+
+/* ============ TIER 3: Dedicated Stop Segment & Bus Run Inspector ============ */
+function Tier3HourPage() {
+  if (S.tierLoading || !S.tier3Data) {
+    return `<div class="tier-nav">
+      <button class="btn pri" data-a="backtier2">← Back to Route Timeline</button>
+    </div><div class="skel"></div>`;
+  }
+  const d = S.tier3Data;
+  const runs = d.bus_runs || [];
+  const segs = d.stop_segments || [];
+
+  return `<div class="tier-nav">
+    <button class="btn pri" data-a="backtier2">← Back to Route Timeline</button>
+    <button class="btn" data-a="backtier1">← Network</button>
+    <span class="mut">Tier 1</span> <span class="mut">/</span>
+    <span class="mut">Tier 2 (Route ${esc(d.route_num)})</span> <span class="mut">/</span>
+    <b>Tier 3: ${esc(d.day_name)} · ${esc(d.time_window)} Stop Segments &amp; Bus Runs</b>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+    <div>
+      <h1>Route ${esc(d.route_num)} · ${esc(d.time_window)} (${esc(d.day_name)})</h1>
+      <p class="mut" style="margin:3px 0">
+        Depot: <b>${esc(d.depot_name)}</b> · Corridor: <b>${esc(d.origin_stop)} ↔ ${esc(d.destination_stop)}</b> (${d.route_km} km)
+      </p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      ${Badge(d.risk, true)}
+      <button class="btn pri" data-a="tier3sim" data-route="${esc(d.route_num)}" data-hour="${d.hour}">⚡ Simulate Fix (+2 Standby Buses)</button>
+    </div>
+  </div>
+
+  ${S.tier3Sim ? `<div class="simnote">
+    ⚡ Live Tier 3 Intervention Simulation: ${esc(S.tier3Sim.summary)} — Pressure drops from <b>${S.tier3Sim.base_pressure_pct}%</b> to <b>${S.tier3Sim.new_pressure_pct}%</b> (${S.tier3Sim.base_capacity} → ${S.tier3Sim.new_capacity} seats).
+  </div>` : ''}
+
+  <div class="tiles">
+    <div class="tile"><span>Predicted Demand (${esc(d.time_window)})</span><b>${d.predicted_demand} pax</b></div>
+    <div class="tile"><span>Active Bus Runs &amp; Capacity</span><b>${d.active_trips} runs (${d.capacity} seats)</b></div>
+    <div class="tile"><span>Demand Pressure &amp; Deficit</span><b class="${d.demand_pressure_pct >= 120 ? 'val-h' : d.demand_pressure_pct >= 100 ? 'val-m' : ''}">${d.demand_pressure_pct}% (${d.seat_deficit > 0 ? '-' + d.seat_deficit : 'OK'})</b></div>
+    <div class="tile"><span>Crush Segments (&gt;65 pax)</span><b class="val-h"><span class="sym-h">▲</span>${d.crush_segment_count} / ${segs.length} hops</b></div>
+  </div>
+
+  <div class="two" style="align-items:start">
+    <div class="panel">
+      <h2>1. Active Bus Runs in Window (${runs.length} Fleet Trips)</h2>
+      <p class="mut" style="font-size:12px;margin-top:0">Individual MTC fleet vehicles operating on Route ${esc(d.route_num)} during ${esc(d.time_window)}.</p>
+      <div style="max-height:430px;overflow-y:auto;border:1px solid var(--line);border-radius:10px">
+        <table>
+          <thead>
+            <tr>
+              <th>Fleet No</th>
+              <th>Trip #</th>
+              <th>Start</th>
+              <th>Dir</th>
+              <th>Boardings</th>
+              <th>Peak On-Board</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${runs.map(r => `<tr class="${r.is_crush_load ? 'crush-row' : ''}">
+              <td class="mono"><b>${esc(r.fleet_no)}</b></td>
+              <td class="mono">Trip #${r.trip_no}</td>
+              <td class="mono">${esc(r.trip_start_time)}</td>
+              <td><span class="chip">${esc(r.direction)}</span></td>
+              <td class="mono">${r.total_passenger_load} pax</td>
+              <td class="mono ${r.is_crush_load ? 'crush-cell' : ''}"><b>${r.peak_onboard_pax} pax</b> (${r.load_factor_pct}%)</td>
+              <td>${Badge(r.risk)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>2. Consecutive Stop-to-Stop Hops (${segs.length} Stage Segments)</h2>
+      <p class="mut" style="font-size:12px;margin-top:0">Sequential stage loads (<code>from_stage → to_stage</code>). Crush segments exceeding <b>65 passengers</b> glow in red.</p>
+      <div style="max-height:430px;overflow-y:auto;border:1px solid var(--line);border-radius:10px">
+        <table>
+          <thead>
+            <tr>
+              <th>Hop</th>
+              <th>From Stop → To Stop</th>
+              <th>+Board / -Alight</th>
+              <th>In-Vehicle Load</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${segs.map(s => {
+              const pct = Math.min(100, Math.round((s.onboard_pax / 135) * 100));
+              const rk = RISK[s.risk] || RISK.L;
+              return `<tr class="${s.is_crush_load ? 'crush-row' : ''}">
+                <td class="mono"><b>S${s.stage_from}→S${s.stage_to}</b></td>
+                <td><b>${esc(s.from_stage_name)}</b> → <b>${esc(s.to_stage_name)}</b></td>
+                <td class="mono">+${s.boardings} / -${s.alightings}</td>
+                <td class="mono ${s.is_crush_load ? 'crush-cell' : ''}">
+                  <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${rk.c}"></div></div>
+                  <b>${s.onboard_pax} pax</b> (${s.load_factor_pct}%)
+                </td>
+                <td>${s.is_crush_load ? `<span class="badge b-H"><i>▲</i>CRUSH &gt;65</span>` : Badge(s.risk)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  ${GoogleMapsGroundingPanel(d.google_maps, d.route_num)}
+  ${XAIPanel(d.id, d.depot_code, d.hour)}`;
+}
+
+/* ============ Recommendations & Simulator Tab ============ */
+function ScenarioCompare(r, rec) {
+  const a = S.sim.act;
+  const baseP = S.simData ? Math.round(S.simData.base_pressure_pct) : Math.round(rec.pressure_pct || 140);
+  const newP = S.simData ? Math.round(S.simData.new_pressure_pct) : Math.round(baseP * ACT[a].f);
+  const baseCap = S.simData ? S.simData.base_capacity : ((rec.active_bus_runs || 5) * 65);
+  const newCap = S.simData ? S.simData.new_capacity : (baseCap + (ACT[a].trips * 65));
+  const baseSeg = S.simData ? S.simData.base_seg : (r ? r.seg : 'MHHHM');
+  const newSeg = S.simData ? S.simData.new_seg : 'LMMLM';
+
+  return `<div class="panel">
+    <div class="simnote" role="note">
+      Live What-If Simulation · ${S.simData ? esc(S.simData.summary) : 'Recalculating corridor capacity and segment load.'}
+    </div>
+    <div class="q" role="group" aria-label="Scenario action">
+      ${Object.entries(ACT).map(([k, v]) => `<button data-a="simact" data-v="${k}" aria-pressed="${a == k}">${v.l}</button>`).join('')}
+    </div>
+    ${r ? `<div class="two">
+      <div><h3>Baseline (${baseP}% pressure)</h3>${MapView(r, baseSeg, { label: 'baseline' })}</div>
+      <div><h3>Simulated (${newP}% pressure)</h3>${MapView(r, newSeg, { label: 'simulated' })}</div>
+    </div>${Legend()}` : ''}
+    <table>
+      <thead><tr><th>Measure</th><th>Baseline</th><th>Simulated</th></tr></thead>
+      <tbody>
+        <tr><td>High-risk crush segments</td><td class="mono">${cnt(baseSeg, 'H')}</td><td class="mono"><b>${cnt(newSeg, 'H')}</b></td></tr>
+        <tr><td>Corridor seat capacity</td><td class="mono">${baseCap} seats</td><td class="mono"><b>${newCap} seats</b></td></tr>
+        <tr><td>Demand vs. capacity <span class="chip">XGBoost R²=0.81</span></td><td class="mono">${baseP}%</td><td class="mono"><b>${newP}%</b></td></tr>
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function RecDetail(rec) {
+  const r = S.items.find(x => x.route == rec.route) || S.items[0];
+  const p = Math.round(rec.pressure_pct || 140);
+  return `<div class="panel">
+    <h2>${esc(rec.title)}</h2>
+    <dl>
+      <dt>Problem</dt><dd>${esc(rec.why)}</dd>
+      <dt>Affected</dt><dd>Route <b>${esc(rec.route)}</b> · ${esc(rec.depot || '')} · ${esc(rec.time_window || '')} (${p}% pressure)</dd>
+      <dt>Proposed response</dt><dd><b>${esc(rec.response)}</b></dd>
+      <dt>Assumptions</dt><dd>${esc(rec.assumptions)}</dd>
+      <dt>Expected effect</dt><dd>${esc(rec.effect)}</dd>
+    </dl>
+    <p style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn pri" data-a="simulate">⚡ Simulate intervention</button>
+      <button class="btn" data-a="openroute" data-v="${esc(rec.route)}">Open Route 24h Timeline →</button>
+    </p>
+  </div>
+  ${XAIPanel(rec.route, '', rec.hour ?? 8)}
+  ${S.sim ? ScenarioCompare(r, rec) : ''}`;
+}
+
+function RecPage() {
+  const rec = S.recs.find(x => x.id == S.rec) || S.recs[0];
+  return `<h1>Dispatch &amp; Corridor Consolidator Recommendations</h1>
+  <p class="mut">Prioritised standby injections and Master Depot corridor consolidations from real ETM capacity pressure alerts.</p>
+  ${S.loading
+    ? '<div class="skel"></div>'
+    : S.recs.length
+      ? `<div class="recs">
+          <div class="rl">
+            ${S.recs.map((x, i) => {
+              const k = x.risk || 'H';
+              return `<button data-a="openrec" data-v="${esc(x.id)}" aria-current="${rec && rec.id == x.id}">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                  <span class="mut mono" style="font-size:12px">#${i + 1} · ${esc(x.id)}</span>
+                  ${Badge(k)}
+                </div>
+                <b>${esc(x.title)}</b>
+                <div class="mut mono" style="font-size:11.5px;margin-top:4px">${esc(x.time_window || '')} · ${x.pressure_pct || ''}% pressure</div>
+              </button>`;
+            }).join('')}
+          </div>
+          <div>${rec ? RecDetail(rec) : '<div class="empty">Select a recommendation to see details.</div>'}</div>
+        </div>`
+      : '<div class="empty">No recommendations right now.</div>'}`;
+}
+
+/* ============ Corridor Diagnostics Tab ============ */
+function DiagnosticsPage() {
+  const bList = S.bottlenecks || [];
+  const selB = bList[S.selBottleneck] || bList[0];
+  const bunchList = S.bunching || [];
+
+  return `<h1>Corridor Diagnostics — Stage Crush Loads &amp; Bus Bunching</h1>
+  <p class="mut">Stop-by-stop cumulative passenger occupancy (<code>occupancy &gt; 65</code>) and headway bunching (<code>Δt &lt; 6 min</code>, <code>Lead &gt; 2.0× Trailing</code>) <span class="chip">Real ETM Logs</span></p>
+
+  <div class="panel" style="margin-top:16px">
+    <h2>1. Top 5 Stop-to-Stop Crush Bottleneck Segments</h2>
+    <div class="chips" role="group" aria-label="Bottleneck route selector">
+      ${bList.map((b, idx) => `<button data-a="selbot" data-v="${idx}" aria-pressed="${S.selBottleneck == idx}">
+        #${idx + 1} Route ${esc(b.route_num)} (${esc(b.direction)}) · ${b.peak_onboard_passengers} pax
+      </button>`).join('')}
+    </div>
+
+    ${selB ? `<div class="two" style="align-items:start;margin-top:10px">
+      <div>
+        <table>
+          <thead><tr><th>Rank</th><th>Route</th><th>Bus Run</th><th>Peak Bottleneck Stretch</th><th>Peak On-Board</th></tr></thead>
+          <tbody>
+            ${bList.map((b, idx) => `<tr class="${S.selBottleneck == idx ? 'sel' : ''}">
+              <td class="mono">#${idx + 1}</td>
+              <td><button class="r" data-a="selbot" data-v="${idx}"><b>${esc(b.route_num)}</b> (${esc(b.direction)})</button></td>
+              <td class="mono">${esc(b.fleet_no)} (Trip ${b.trip_no})</td>
+              <td>${esc(b.bottleneck_segment)}</td>
+              <td class="mono">${Badge('H')} <b>${b.peak_onboard_passengers} pax</b> (${b.crush_load_factor_pct}%)</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="panel" style="margin-bottom:0">
+        <h3>Stage-by-Stage Occupancy: Route ${esc(selB.route_num)} (${esc(selB.direction)}) — Bus ${esc(selB.fleet_no)}</h3>
+        <p class="mut" style="font-size:12px;margin-bottom:8px">Depot: ${esc(selB.depot)} · Start: ${esc(selB.trip_start_time)} · Total boardings: ${selB.total_trip_boardings} pax</p>
+        <div style="max-height:245px;overflow-y:auto">
+          <table>
+            <thead><tr><th>Stage Stretch</th><th>+Board / -Alight</th><th>In-Vehicle Load</th><th>Status</th></tr></thead>
+            <tbody>
+              ${(selB.stage_by_stage_profile || []).map(st => {
+                const pct = Math.min(100, Math.round((st.in_vehicle_occupancy / 140) * 100));
+                const k = st.in_vehicle_occupancy > 65 ? 'H' : st.in_vehicle_occupancy >= 50 ? 'M' : 'L';
+                return `<tr class="${st.in_vehicle_occupancy > 65 ? 'crush-row' : ''}">
+                  <td><b>S${st.stage_no}</b> ${esc(st.from_stop)} → ${esc(st.to_stop)}</td>
+                  <td class="mono">+${st.boardings} / -${st.alightings}</td>
+                  <td class="mono">
+                    <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${RISK[k].c}"></div></div>
+                    <b>${st.in_vehicle_occupancy} pax</b>
+                  </td>
+                  <td>${Badge(k)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>` : '<div class="empty">No bottleneck data loaded.</div>'}
+  </div>
+
+  <div class="panel">
+    <h2>2. Traffic-Induced Bus Bunching Incidents (Δt &lt; 6 min &amp; Lead Bus &gt; 2.0× Trailing)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Incident</th>
+          <th>Route &amp; Corridor</th>
+          <th>Lead Bus (Start / Pax)</th>
+          <th>Trailing Bus (Start / Pax)</th>
+          <th>Headway Gap (Δt)</th>
+          <th>Load Ratio</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${bunchList.map((b, idx) => {
+          const isSel = S.selBunching == idx;
+          return `<tr class="${isSel ? 'sel' : ''}">
+            <td><button class="r mono" data-a="selbunch" data-v="${idx}">${esc(b.incident_id)}</button></td>
+            <td><b>Route ${esc(b.route_num)} (${esc(b.direction)})</b><div class="mut" style="font-size:12px">${esc(b.corridor)}</div></td>
+            <td class="mono"><b>${esc(b.lead_bus.fleet_no)}</b> (${esc(b.lead_bus.first_ticket_time)} · <b>${b.lead_bus.passenger_count} pax</b>)</td>
+            <td class="mono"><b>${esc(b.trailing_bus.fleet_no)}</b> (${esc(b.trailing_bus.first_ticket_time)} · <b>${b.trailing_bus.passenger_count} pax</b>)</td>
+            <td class="mono">${Badge('M')} <b>${b.observed_gap_minutes} min</b></td>
+            <td class="mono">${Badge('H')} <b>${b.load_imbalance_ratio}×</b></td>
+          </tr>
+          ${isSel ? `<tr class="exp"><td colspan="6">
+            <dl>
+              <dt>Lead bus action</dt><dd><b>${esc(b.operational_response.lead_bus_action)}</b></dd>
+              <dt>Trailing bus action</dt><dd><b>${esc(b.operational_response.trailing_bus_action)}</b></dd>
+              <dt>Excel CSV trace</dt><dd><code>Data/ETM/Ticket-Data-2026-03-12.csv</code> · Depot: ${esc(b.depot)}</dd>
+            </dl>
+          </td></tr>` : ''}`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function Incidents() {
+  return `<h2 style="margin-top:32px">Open incident reports</h2>
+  ${S.inc.length
+    ? `<div class="panel" style="padding:0;overflow:hidden"><table>
+        <thead><tr><th>ID</th><th>Type</th><th>Where</th><th>Time</th><th>Description</th></tr></thead>
+        <tbody>
+          ${S.inc.map(i => `<tr>
+            <td class="mono"><b>${esc(i.id)}</b></td>
+            <td>${esc(i.type)}</td>
+            <td>${esc(i.where)}</td>
+            <td class="mono">${esc(i.time)}</td>
+            <td>${esc(i.desc)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>`
+    : '<div class="empty">No open reports.</div>'}`;
+}
+
+function IncidentDialog() {
+  const t = new Date().toTimeString().slice(0, 5);
+  return `<dialog id="dlg" aria-labelledby="dt">
+    ${S.sent
+      ? `<h2 id="dt">Report submitted</h2>
+         <p>${esc(S.sent.id)} was added to open incidents. <span class="chip">Live API</span></p>
+         <button class="btn pri" data-a="closemodal">Close</button>`
+      : `<form id="frm">
+          <h2 id="dt">Report an operational incident</h2>
+          <label for="f1">Issue type</label>
+          <select id="f1" name="type">
+            <option>Overcrowding</option>
+            <option>Bus Bunching</option>
+            <option>Stage Crush Load</option>
+            <option>Breakdown</option>
+          </select>
+          <label for="f2">Route</label>
+          <select id="f2" name="where">
+            ${S.items.slice(0, 60).map(r => `<option value="${esc(r.route)} (${esc(r.name)})">${esc(r.route)} · ${esc(r.name)}</option>`).join('')}
+          </select>
+          <label for="f3">Time</label>
+          <input id="f3" name="time" type="time" value="${t}" required>
+          <label for="f4">Description</label>
+          <textarea id="f4" name="desc" rows="3" placeholder="Describe passenger queue, headway gap, or road condition..." required></textarea>
+          <p style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+            <button type="button" class="btn" data-a="closemodal">Cancel</button>
+            <button class="btn pri">Submit report</button>
+          </p>
+        </form>`}
+  </dialog>`;
+}
+
+/* ============ App View & State Transitions ============ */
+function view() {
+  let body = '';
+  if (S.tab == 'rec') {
+    body = RecPage();
+  } else if (S.tab == 'diag') {
+    body = DiagnosticsPage();
+  } else if (S.tier == 3) {
+    body = Tier3HourPage();
+  } else if (S.tier == 2) {
+    body = Tier2RoutePage();
+  } else {
+    body = Tier1NetworkPage();
+  }
+  return `${Header()}<main>${AlertBanner()}${body}</main>${IncidentDialog()}`;
+}
+
+function render() {
+  const a = document.getElementById('app');
+  a.innerHTML = view();
+  const d = document.getElementById('dlg');
+  if (d && S.modal && !d.open) {
+    d.showModal();
+    d.addEventListener('close', () => { S.modal = false; S.sent = null; render(); }, { once: true });
+  }
+}
+
+async function fetchTier1Routes() {
+  S.loading = true;
+  render();
+  const data = await api.routes(S.mode, S.depot, S.dow, S.hour, S.riskFilter, S.search);
+  S.items = data.routes || [];
+  S.totalRoutes = data.total_routes ?? S.items.length;
+  S.kpi = data.kpi || { critical_count: 0, high_count: 0, normal_count: 0, avg_pressure_pct: 0 };
+  if (data.depots && data.depots.length) S.depots = data.depots;
+  S.shpBounds = data.shapefile_bounds || null;
+  S.loading = false;
+  render();
+}
+
+async function openTier2Route(routeId, depotCode) {
+  S.tab = 'net';
+  S.tier = 2;
+  S.tierLoading = true;
+  S.q = null;
+  S.xaiAns = null;
+  S.tier3Sim = null;
+  scrollTo(0, 0);
+  render();
+  S.tier2Data = await api.tier2Route(routeId, depotCode || S.depot, S.dow);
+  S.tierLoading = false;
+  render();
+}
+
+async function openTier3Hour(routeId, depotCode, hourVal) {
+  S.tab = 'net';
+  S.tier = 3;
+  S.tierLoading = true;
+  S.q = null;
+  S.xaiAns = null;
+  S.tier3Sim = null;
+  scrollTo(0, 0);
+  render();
+  S.tier3Data = await api.tier3Hour(routeId, hourVal, depotCode || (S.tier2Data && S.tier2Data.depot_code) || '', S.dow);
+  S.tierLoading = false;
+  render();
+}
+
+async function runSimCall(actKey) {
+  const rec = S.recs.find(x => x.id == S.rec) || S.recs[0];
+  if (!rec) return;
+  const cfg = ACT[actKey] || ACT.add;
+  try {
+    S.simData = await api.simulate({
+      route: rec.route,
+      day_of_week: S.dow,
+      hour: rec.hour ?? S.hour,
+      action: actKey,
+      extra_trips: rec.extra_buses || cfg.trips || 2
+    });
+  } catch (e) {
+    S.simData = null;
+  }
+  render();
+}
+
+async function runTier3SimCall(routeNum, hourVal) {
+  try {
+    S.tier3Sim = await api.simulate({
+      route: routeNum,
+      day_of_week: S.dow,
+      hour: hourVal,
+      action: 'add',
+      extra_trips: 2
+    });
+  } catch (e) {
+    S.tier3Sim = null;
+  }
+  render();
+}
+
+async function runXaiCall(routeNum, depotCode, hourVal, questionKey, customQuery) {
+  S.q = questionKey || 'custom';
+  S.xaiLoading = true;
+  render();
+  try {
+    S.xaiAns = await api.xaiExplain({
+      route_num: routeNum || '102K',
+      depot: depotCode || null,
+      day_of_week: S.dow,
+      hour: hourVal != null ? +hourVal : S.hour,
+      question_key: questionKey || 'why_flagged',
+      custom_query: customQuery || null
+    });
+  } catch (e) {
+    S.xaiAns = {
+      source: 'Offline Fallback',
+      answer: 'Unable to reach /api/xai/explain endpoint.',
+      metrics: {}
+    };
+  }
+  S.xaiLoading = false;
+  render();
+}
+
+async function initLoad() {
+  S.loading = true;
+  render();
+  const [rData, al, recs, inc, bData, bnData] = await Promise.all([
+    api.routes(S.mode, S.depot, S.dow, S.hour, S.riskFilter, S.search),
+    api.alert(S.mode),
+    api.recs(S.mode),
+    api.incidents(),
+    api.bottlenecks(),
+    api.bunching()
+  ]);
+  S.items = rData.routes || [];
+  S.totalRoutes = rData.total_routes ?? S.items.length;
+  S.kpi = rData.kpi || { critical_count: 0, high_count: 0, normal_count: 0, avg_pressure_pct: 0 };
+  S.depots = rData.depots || [];
+  S.shpBounds = rData.shapefile_bounds || null;
+  S.al = al || null;
+  S.recs = recs || [];
+  S.inc = inc || [];
+  S.bottlenecks = (bData && bData.top_5_corridor_bottlenecks) ? bData.top_5_corridor_bottlenecks : [];
+  S.bunching = (bnData && bnData.incidents) ? bnData.incidents : [];
+  if (!S.rec && S.recs[0]) S.rec = S.recs[0].id;
+  S.loading = false;
+  render();
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-a]');
+  if (!b) return;
+  const a = b.dataset.a, v = b.dataset.v;
+
+  if (a == 'theme') {
+    S.theme = S.theme == 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', S.theme);
+    localStorage.setItem('dd_theme', S.theme);
+    return render();
+  }
+  if (a == 'mode') {
+    S.mode = v;
+    Object.assign(S, { tier: 1, depot: 'ALL', riskFilter: 'ALL', search: '', rec: null, sim: null, simData: null, q: null, xaiAns: null });
+    return initLoad();
+  }
+  if (a == 'alert') { S.alert = !S.alert; return render(); }
+  if (a == 'depot') {
+    S.depot = v;
+    S.cardLimit = 60;
+    return fetchTier1Routes();
+  }
+  if (a == 'clearfilters') {
+    S.depot = 'ALL';
+    S.riskFilter = 'ALL';
+    S.search = '';
+    S.cardLimit = 60;
+    return fetchTier1Routes();
+  }
+  if (a == 'morecards') { S.cardLimit += 80; return render(); }
+  if (a == 'allcards') { S.cardLimit = 5000; return render(); }
+  if (a == 'openroute') {
+    return openTier2Route(v, b.dataset.depot || '');
+  }
+  if (a == 'backtier1') {
+    S.tier = 1;
+    S.q = null;
+    S.xaiAns = null;
+    return render();
+  }
+  if (a == 'backtier2') {
+    S.tier = 2;
+    S.q = null;
+    S.xaiAns = null;
+    return render();
+  }
+  if (a == 'opentier3') {
+    const rId = S.tier2Data ? S.tier2Data.id : '102K';
+    const dCode = S.tier2Data ? S.tier2Data.depot_code : '';
+    return openTier3Hour(rId, dCode, +v);
+  }
+  if (a == 'tier3sim') {
+    return runTier3SimCall(b.dataset.route || '102K', +(b.dataset.hour ?? S.hour));
+  }
+  if (a == 'tab') {
+    S.tab = v;
+    if (v == 'net') S.tier = 1;
+    if (v == 'rec' && !S.rec && S.recs[0]) S.rec = S.recs[0].id;
+    return render();
+  }
+  if (a == 'openrec') {
+    S.tab = 'rec';
+    S.rec = v;
+    S.sim = null;
+    S.simData = null;
+    S.q = null;
+    S.xaiAns = null;
+    S.alert = false;
+    return render();
+  }
+  if (a == 'simulate') {
+    S.sim = { act: 'add' };
+    return runSimCall('add');
+  }
+  if (a == 'simact') {
+    S.sim = { act: v };
+    return runSimCall(v);
+  }
+  if (a == 'askxai') {
+    return runXaiCall(b.dataset.route || '102K', b.dataset.depot || '', b.dataset.hour ?? S.hour, v, null);
+  }
+  if (a == 'selbot') { S.selBottleneck = +v; return render(); }
+  if (a == 'selbunch') { S.selBunching = S.selBunching == +v ? null : +v; return render(); }
+  if (a == 'report') { S.modal = true; S.sent = null; return render(); }
+  if (a == 'closemodal') {
+    const d = document.getElementById('dlg');
+    S.modal = false;
+    S.sent = null;
+    d && d.open && d.close();
+    return render();
+  }
+});
+
+document.addEventListener('change', async e => {
+  if (e.target.id == 'dow') {
+    S.dow = +e.target.value;
+    if (S.tier == 3 && S.tier3Data) {
+      return openTier3Hour(S.tier3Data.id, S.tier3Data.depot_code, S.tier3Data.hour);
+    }
+    if (S.tier == 2 && S.tier2Data) {
+      return openTier2Route(S.tier2Data.id, S.tier2Data.depot_code);
+    }
+    return fetchTier1Routes();
+  }
+  if (e.target.id == 'hour') {
+    S.hour = +e.target.value;
+    if (S.tier == 3 && S.tier3Data) {
+      return openTier3Hour(S.tier3Data.id, S.tier3Data.depot_code, S.hour);
+    }
+    return fetchTier1Routes();
+  }
+  if (e.target.id == 'riskSel') {
+    S.riskFilter = e.target.value;
+    return fetchTier1Routes();
+  }
+});
+
+document.addEventListener('submit', async e => {
+  if (e.target.id == 'searchFrm') {
+    e.preventDefault();
+    const inp = document.getElementById('searchInp');
+    S.search = inp ? inp.value.trim() : '';
+    return fetchTier1Routes();
+  }
+  if (e.target.id == 'xaifrm') {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const qText = (f.get('custom_query') || '').trim();
+    if (!qText) return;
+    return runXaiCall(e.target.dataset.route || '102K', e.target.dataset.depot || '', e.target.dataset.hour ?? S.hour, 'custom_query', qText);
+  }
+  if (e.target.id != 'frm') return;
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const incPayload = {
+    type: f.get('type'),
+    where: f.get('where'),
+    time: f.get('time'),
+    desc: f.get('desc')
+  };
+  const btn = e.target.querySelector('.pri');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+  const created = await api.submitIncident(incPayload);
+  S.inc.unshift(created);
+  S.sent = created;
+  const d = document.getElementById('dlg');
+  d.close();
+  S.modal = true;
+  render();
+});
+
+initLoad();
+</script>
+</body>
+</html>

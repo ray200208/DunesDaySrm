@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Marina Ops — Chennai transit dashboard (demo)</title>
+<style>
+:root{--h:#e0142c;--m:#e8790c;--l:#08938a;--ink:#14181f;--mut:#5b6472;--line:#e3e6eb;--bg:#f6f7f9;--ac:#1f3a5f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:#fff}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}:focus-visible{outline:2px solid #1f5fd1;outline-offset:2px}
+.sr{position:absolute;left:-9999px}
+.top{display:flex;align-items:center;gap:16px;height:52px;padding:0 20px;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:-.01em}.sp{flex:1}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:5px 12px}.seg button[aria-pressed=true]{background:var(--ac);color:#fff}
+.nav button{border:0;background:none;padding:6px 10px;border-radius:6px;color:var(--mut)}.nav button[aria-current=page]{color:var(--ink);font-weight:600;background:var(--bg)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px}.btn:hover{background:var(--bg)}
+.btn.pri{background:var(--ac);color:#fff;border-color:var(--ac)}
+select,input,textarea{border:1px solid #cfd4db;border-radius:8px;padding:6px 8px;background:#fff}
+main{max-width:1280px;margin:0 auto;padding:20px}
+.alert{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 14px;border:1px solid #f4b6bd;background:#fff6f7;border-radius:10px;margin-bottom:16px}
+.alert p{margin:0;flex:1;min-width:200px}.detail{margin:-8px 0 16px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.badge{display:inline-flex;gap:4px;align-items:center;padding:1px 9px;border-radius:99px;font-weight:600;font-size:12px;border:1.5px solid;background:#fff;white-space:nowrap}
+.b-H{border-color:var(--h);background:#fff1f2}.b-H i{color:var(--h)}.b-M{border-color:var(--m);background:#fff7ec}.b-M i{color:var(--m)}.b-L{border-color:var(--l);background:#effaf8}.b-L i{color:var(--l)}.badge i{font-style:normal}
+.chip{font-size:11px;color:var(--mut);border:1px dashed #b8bfc9;border-radius:6px;padding:0 6px;white-space:nowrap}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:20px}
+.tile{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:linear-gradient(180deg,#fff,#fafbfc);box-shadow:0 1px 2px rgba(20,24,31,.04)}
+.tile b{display:block;font-size:24px;line-height:1.2}.tile span{color:var(--mut);font-size:12px}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:16px;margin:0 0 8px}h3{font-size:14px;margin:12px 0 4px}.mut{color:var(--mut)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 14px}.chips button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:3px 12px}.chips button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card{text-align:left;border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px;transition:border-color .15s,box-shadow .15s}
+.card:hover{border-color:#9aa5b5;box-shadow:0 2px 8px rgba(20,24,31,.08)}.card .row{display:flex;justify-content:space-between;gap:8px;align-items:start;margin-bottom:6px}
+.map{width:100%;display:block;background:#fafbfc;border:1px solid var(--line);border-radius:12px}
+.route{display:grid;grid-template-columns:minmax(320px,400px) 1fr;gap:20px;align-items:start}
+@media(max-width:860px){.route,.recs{grid-template-columns:1fr!important}}
+table{width:100%;border-collapse:collapse}th{text-align:left;font-size:12px;color:var(--mut);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:4px 8px;border-bottom:1px solid var(--line)}td button.r{width:100%;text-align:left;border:0;background:none;padding:6px 0;font-weight:600}
+tr.sel td{background:var(--bg)}.exp td{padding:10px 12px;background:var(--bg)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)}
+.recs{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+.rl button{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 12px;margin-bottom:8px}.rl button[aria-current=true]{border-color:var(--ac);box-shadow:inset 3px 0 0 var(--ac)}
+.panel{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+dl{margin:0;display:grid;grid-template-columns:130px 1fr;gap:6px 12px}dt{color:var(--mut)}dd{margin:0}
+.q{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.q button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:3px 12px}.q button[aria-pressed=true]{border-color:var(--ac);background:#eef3fa}
+.ans{padding:10px 12px;background:var(--bg);border-radius:8px}
+.simnote{padding:8px 12px;border:1px solid #c7d3e6;background:#f2f6fc;border-radius:8px;font-weight:600;margin-bottom:10px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:700px){.two{grid-template-columns:1fr}}
+.skel{height:110px;border-radius:12px;background:linear-gradient(90deg,#f1f3f6,#fafbfc,#f1f3f6);background-size:200% 100%;animation:sk 1.2s linear infinite}@keyframes sk{to{background-position:-200% 0}}
+.empty{padding:28px;text-align:center;border:1px dashed #cfd4db;border-radius:12px;color:var(--mut)}
+.login{max-width:440px;margin:12vh auto;padding:28px;border:1px solid var(--line);border-radius:16px;box-shadow:0 6px 24px rgba(20,24,31,.06)}
+.login .seg{margin:12px 0 18px}.login .seg button{flex:1;padding:9px}
+dialog{border:1px solid var(--line);border-radius:14px;padding:20px;width:min(480px,92vw);box-shadow:0 12px 40px rgba(20,24,31,.18)}dialog::backdrop{background:rgba(20,24,31,.3)}
+label{display:block;margin:10px 0 3px;font-weight:600;font-size:13px}dialog select,dialog input,dialog textarea{width:100%}
+.menu{position:absolute;right:20px;top:50px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px;box-shadow:0 6px 20px rgba(20,24,31,.1)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head><body><div id="app"></div>
+<script>
+/* ============ types (JSDoc mirrors of the TypeScript types for the real build) ============ */
+/** @typedef {'H'|'M'|'L'} Risk  @typedef {{name:string,x:number,y:number}} Stop
+ *  @typedef {{obs:number,pred:number,cap:number|null,conf:number,seg:string}} Forecast  (seg = one Risk char per segment)
+ *  @typedef {{id:string,name:string,group:string,stops:Stop[],w:Forecast[]}} Route
+ *  @typedef {{text:string,rec:string}} Alert
+ *  @typedef {{id:string,route:string,win:number,title:string,response:string,assumptions:string,effect:string}} Recommendation
+ *  @typedef {{id:string,type:string,where:string,time:string,desc:string,status:string}} Incident
+ *  @typedef {{action:string,label:string,factor:number}} Scenario */
+
+/* ============ mock data (all fictional) ============ */
+const R=(id,name,group,stops,w)=>({id,name,group,stops:stops.split('|').map(s=>{const[a,x,y]=s.split(':');return{name:a,x:+x,y:+y}}),w:w.map(([obs,pred,cap,conf,seg])=>({obs,pred,cap,conf,seg}))});
+const WINS=['07:00–08:00','08:00–09:00','17:00–18:00','18:00–19:00'];
+const DATA={
+MTC:{label:'MTC bus',groupLabel:'Depot',noun:'route',items:[
+ R('21G','Broadway – Tambaram','Tambaram','Broadway:8:12|Central:22:20|Guindy:40:30|Chromepet:58:42|Tambaram:80:52',[[410,520,720,.85,'LMML'],[640,810,760,.8,'MHHM'],[380,470,720,.7,'LLML'],[590,780,760,.5,'MHHH']]),
+ R('47A','Adyar – Siruseri','Adyar','Adyar:10:14|Madhya Kailash:24:24|Thoraipakkam:42:30|Sholinganallur:62:42|Siruseri:84:50',[[300,380,600,.85,'LLML'],[450,560,620,.8,'LMML'],[350,430,600,.75,'LLLM'],[520,650,620,.8,'MHHM']]),
+ R('5E','Saidapet – Medavakkam','Saidapet','Saidapet:12:36|Little Mount:28:30|Velachery:50:44|Medavakkam:76:52',[[250,300,500,.9,'LLL'],[330,420,500,.85,'LML'],[310,380,500,.8,'LML'],[440,540,520,.8,'MHM']])],
+ alert:{text:'Route 21G: Chromepet – Tambaram forecast High from 18:00 after a reported road diversion (demo).',rec:'m1'},
+ recs:[{id:'m1',route:'21G',win:3,title:'Add one trip on 21G, evening peak',response:'Insert one extra bus trip from Broadway at 17:50, run by Tambaram depot.',assumptions:'A spare bus is available; diversion adds about 6 min to the run (estimate).',effect:'Estimated 14% lower peak load on the busiest stretches.'},
+  {id:'m2',route:'47A',win:3,title:'Stagger 47A departures, evening peak',response:'Space departures 3 minutes apart between 18:00 and 19:00 to reduce bunching.',assumptions:'Current headway is uneven (demo assumption).',effect:'Estimated 5% lower peak load; High stretches ease to Medium.'}]},
+Metro:{label:'Metro',groupLabel:'Line',noun:'line',items:[
+ R('BL','Blue Line: Airport – Washermanpet','Blue','Airport:8:48|Guindy:26:38|Little Mount:40:30|Teynampet:56:24|Govt Estate:72:16|Washermanpet:90:8',[[900,1100,1800,.9,'LLLLL'],[1500,1850,1800,.85,'LMMHM'],[1300,1500,1800,.8,'LLMML'],[1550,1900,1800,.8,'MMHHM']]),
+ R('GL','Green Line: Central – St Thomas Mount','Green','Central:14:16|Egmore:30:20|Koyambedu:46:30|Vadapalani:62:38|St Thomas Mt:82:48',[[700,850,1500,.9,'LLLL'],[1100,1350,1500,.8,'LMMM'],[900,1050,1500,.8,'LLML'],[1200,1500,1500,.55,'MMHM']])],
+ alert:{text:'Blue Line: Teynampet – Govt Estate forecast High 18:00–19:00 (demo).',rec:'t1'},
+ recs:[{id:'t1',route:'BL',win:3,title:'Add one train on Blue Line, evening peak',response:'Add one extra train departing Airport at 17:55 (reduce headway for one cycle).',assumptions:'A spare rake is available at depot (demo assumption).',effect:'Estimated 14% lower peak load; High stretches ease to Medium.'},
+  {id:'t2',route:'GL',win:3,title:'Hold-and-release at Vadapalani, Green Line',response:'Stagger departures at Vadapalani for 20 minutes. Forecast confidence is low, so review first.',assumptions:'Forecast is low-confidence; the window has little history.',effect:'Estimated 5% lower peak load (low confidence).'}]},
+MRTS:{label:'MRTS',groupLabel:'Line',noun:'line',items:[
+ R('BV','Chennai Beach – Velachery','Beach–Velachery','Chennai Beach:12:12|Park Town:24:18|Mylapore:44:30|Indira Nagar:60:42|Velachery:80:52',[[500,640,1100,.85,'LLML'],[850,1050,1100,.8,'MMHM'],[600,700,1100,.8,'LLML'],[900,1150,1100,.75,'MHHM']])],
+ alert:{text:'MRTS Beach–Velachery: Mylapore – Indira Nagar forecast High 08:00–09:00 (demo).',rec:'r1'},
+ recs:[{id:'r1',route:'BV',win:1,title:'Add one service, morning peak',response:'Add one extra service from Chennai Beach at 07:50.',assumptions:'Platform capacity allows one more path (demo assumption).',effect:'Estimated 14% lower peak load.'},
+  {id:'r2',route:'BV',win:3,title:'Stagger evening departures',response:'Space departures evenly 17:30–19:00 to smooth platform loading.',assumptions:'Timetable has slack of 2 minutes (demo).',effect:'Estimated 5% lower peak load.'}]}};
+const INC=[{id:'INC-104',type:'Breakdown',where:'47A',time:'07:42',desc:'Bus stopped near Thoraipakkam; relief bus requested.',status:'Open'},{id:'INC-105',type:'Overcrowding',where:'21G',time:'08:10',desc:'Crowding at Guindy stop; passengers left behind.',status:'Open'}];
+
+/* ============ service layer: swap these for real endpoints later ============ */
+const delay=(v,ms=350)=>new Promise(r=>setTimeout(()=>r(structuredClone(v)),ms));
+const api={routes:m=>delay(DATA[m].items),alert:m=>delay(DATA[m].alert),recs:m=>delay(DATA[m].recs),incidents:()=>delay(INC,200),submitIncident:i=>{INC.unshift(i);return delay(i,450)}};
+
+/* ============ helpers ============ */
+const RISK={H:{l:'High',g:'▲',c:'var(--h)'},M:{l:'Medium',g:'◆',c:'var(--m)'},L:{l:'Low',g:'●',c:'var(--l)'}};
+const worst=s=>s.includes('H')?'H':s.includes('M')?'M':'L';
+const cnt=(s,k)=>[...s].filter(c=>c==k).length;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ACT={add:{l:'Add one extra trip',f:.86},short:{l:'Short-turn extra service (first half)',f:.93},stagger:{l:'Stagger departures by 3 min',f:.95}};
+const lower=c=>c=='H'?'M':c=='M'?'L':'L';
+const simSeg=(seg,a)=>[...seg].map((c,i)=>a=='add'?lower(c):a=='short'?(i<Math.ceil(seg.length/2)?lower(c):c):(c=='H'?'M':c)).join('');
+const Badge=k=>`<span class="badge b-${k}"><i aria-hidden="true">${RISK[k].g}</i>${RISK[k].l}</span>`;
+
+const S={screen:'login',mode:'MTC',win:3,group:'All',route:null,row:null,tab:'net',rec:null,sim:null,q:null,menu:false,alert:false,modal:false,sent:null,loading:true,items:[],al:null,recs:[],inc:[],fk:null};
+const rt=id=>S.items.find(r=>r.id==id);
+
+/* ============ components ============ */
+function Header(){return `<header class="top"><span class="brand">Marina Ops</span>
+<div class="seg" role="group" aria-label="Transport mode">${Object.keys(DATA).map(m=>`<button data-a="mode" data-v="${m}" aria-pressed="${S.mode==m}">${m}</button>`).join('')}</div>
+<nav class="nav" aria-label="Sections"><button data-a="tab" data-v="net" ${S.tab=='net'?'aria-current="page"':''}>Network</button><button data-a="tab" data-v="rec" ${S.tab=='rec'?'aria-current="page"':''}>Recommendations</button></nav><span class="sp"></span>
+<label class="sr" for="win">Time window</label><select id="win">${WINS.map((w,i)=>`<option value="${i}" ${S.win==i?'selected':''}>${w}</option>`).join('')}</select>
+<button class="btn" data-a="report">Report incident</button>
+<button class="btn" data-a="menu" aria-expanded="${S.menu}" aria-haspopup="true">Demo user ▾</button>
+${S.menu?`<div class="menu"><button class="btn" data-a="signout">Back to sign-in</button></div>`:''}</header>`}
+
+function AlertBanner(){if(!S.al)return'';return `<div class="alert" role="status"><span class="badge b-H"><i aria-hidden="true">▲</i>Urgent</span><p>${esc(S.al.text)} <span class="chip">Demo data</span></p><button class="btn" data-a="alert" aria-expanded="${S.alert}">View details</button></div>
+${S.alert?`<div class="detail">Forecast demand exceeds the estimated capacity on the flagged stretch. A recommendation is ready for review. <button class="btn pri" data-a="openrec" data-v="${S.al.rec}">Open recommendation</button></div>`:''}`}
+
+function Summary(){const ks=S.items.map(r=>worst(r.w[S.win].seg));const low=S.items.filter(r=>r.w[S.win].conf<.6).length;
+return `<div class="tiles"><div class="tile"><span>High-risk forecasts · ${WINS[S.win]}</span><b>▲ ${ks.filter(k=>k=='H').length}</b></div><div class="tile"><span>Medium-risk forecasts</span><b>◆ ${ks.filter(k=>k=='M').length}</b></div>
+<div class="tile"><span>Open incident reports</span><b>${S.inc.filter(i=>i.status=='Open').length}</b></div><div class="tile"><span>Low-confidence forecasts</span><b>${low}</b></div></div>`}
+
+function MapView(r,seg,o={}){const m=o.mini?2.3:1,s=r.stops;let g='',n='';
+for(let i=0;i<s.length-1;i++){const k=seg[i],a=s[i],b=s[i+1];
+g+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${RISK[k].c}" stroke-width="${(k=='H'?1.5:1.1)*m}" stroke-linecap="round" ${k=='M'?`stroke-dasharray="${3.2*m} ${1.4*m}"`:''}><title>${a.name} to ${b.name}: ${RISK[k].l} risk</title></line>`;
+if(!o.mini)g+=`<text x="${(a.x+b.x)/2}" y="${(a.y+b.y)/2-2.4}" text-anchor="middle" font-size="2.8" font-weight="700" fill="${RISK[k].c}">${RISK[k].g}</text>`}
+s.forEach(p=>{n+=`<circle cx="${p.x}" cy="${p.y}" r="${o.mini?1.3:1.3}" fill="#fff" stroke="#14181f" stroke-width=".5"/>`;if(!o.mini)n+=`<text x="${p.x}" y="${p.y+4.2}" text-anchor="middle" font-size="2.3" fill="#14181f">${esc(p.name)}</text>`});
+return `<svg class="map" viewBox="0 0 100 60" role="img" aria-label="Map of ${esc(r.name)}, ${o.label||''}"><path d="M97 0Q92 20 96 36T99 60H100V0Z" fill="#e6f0f8"/><text x="90" y="5" font-size="2" fill="#8aa0b6" text-anchor="middle">Bay of Bengal</text>${g}${n}</svg>`}
+
+const Legend=()=>`<div class="legend" aria-label="Legend">${['H','M','L'].map(k=>`<span>${Badge(k)}</span>`).join('')}<span>Dashed = medium · glyphs mark each segment</span></div>`;
+
+function RouteList(){const D=DATA[S.mode],groups=['All',...new Set(D.items.map(i=>i.group))];
+const list=S.items.filter(r=>S.group=='All'||r.group==S.group);
+return `<h2>${D.noun=='route'?'Routes':'Lines & stations'}</h2><div class="chips" role="group" aria-label="${D.groupLabel} filter">${groups.map(g=>`<button data-a="group" data-v="${g}" aria-pressed="${S.group==g}">${g=='All'?'All '+D.groupLabel.toLowerCase()+'s':esc(g)}</button>`).join('')}</div>
+${S.loading?`<div class="grid"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>`:list.length?`<div class="grid">${list.map(r=>{const f=r.w[S.win],k=worst(f.seg);
+return `<button class="card" data-a="route" data-v="${r.id}"><div class="row"><div><b>${esc(r.id)}</b> · ${esc(r.name)}<div class="mut">${D.groupLabel}: ${esc(r.group)} · ${r.stops.length} ${D.noun=='route'?'stops':'stations'}</div></div>${Badge(k)}</div>${MapView(r,f.seg,{mini:1,label:RISK[k].l})}${f.conf<.6?'<div class="mut">Low confidence forecast</div>':''}</button>`}).join('')}</div>`:`<div class="empty">No ${D.noun}s match this filter.<br><button class="btn" data-a="group" data-v="All">Clear filter</button></div>`}`}
+
+function TimeTable(r){return `<table><caption class="sr">Forecast by time window</caption><thead><tr><th>Window</th><th>Risk</th><th>Predicted</th></tr></thead><tbody>${r.w.map((f,i)=>{const k=worst(f.seg),sel=S.row==i;
+return `<tr class="${sel?'sel':''}"><td><button class="r" data-a="row" data-v="${i}" aria-expanded="${sel}">${WINS[i]}</button></td><td>${Badge(k)}</td><td>${f.pred} <span class="chip">Demo data</span></td></tr>
+${sel?`<tr class="exp"><td colspan="3"><dl><dt>Observed tickets</dt><dd>${f.obs} <span class="chip">Demo data</span></dd><dt>Predicted demand</dt><dd>${f.pred} <span class="chip">Estimate</span></dd><dt>Capacity</dt><dd>${f.cap?f.cap+' <span class="chip">Estimate</span>':'Not available'}</dd><dt>Confidence</dt><dd>${Math.round(f.conf*100)}%${f.conf<.6?' <span class="badge b-M"><i>◆</i>Low confidence</span>':''}</dd><dt>Why</dt><dd>${explain(r,i)}</dd></dl></td></tr>`:''}`}).join('')}</tbody></table>`}
+function explain(r,i){const f=r.w[i],p=f.cap?Math.round(f.pred/f.cap*100):null;return `${p?`Predicted demand is about ${p}% of estimated capacity. `:''}${cnt(f.seg,'H')} segment(s) flagged High and ${cnt(f.seg,'M')} Medium${f.conf<.6?'. Little history for this window, so treat as indicative':''}.`}
+
+function RoutePage(){const r=rt(S.route),i=S.row??S.win,f=r.w[i];
+return `<button class="btn" data-a="back">← Network</button><h1 style="margin-top:12px">${esc(r.id)} · ${esc(r.name)}</h1><p class="mut">Select a time window to see details. Map shows ${WINS[i]}.</p>
+<div class="route"><div>${TimeTable(r)}</div><div>${MapView(r,f.seg,{label:'risk by segment for '+WINS[i]})}${Legend()}</div></div>`}
+
+function ScenarioCompare(r,rec){const f=r.w[rec.win],a=S.sim.act,sim=simSeg(f.seg,a),p=f.cap?f.pred/f.cap*100:null;
+return `<div class="panel"><div class="simnote" role="note">Simulation only · demo estimate. No action has been dispatched.</div>
+<div class="q" role="group" aria-label="Scenario action">${Object.entries(ACT).map(([k,v])=>`<button data-a="simact" data-v="${k}" aria-pressed="${a==k}">${v.l}</button>`).join('')}</div>
+<div class="two"><div><h3>Baseline</h3>${MapView(r,f.seg,{label:'baseline'})}</div><div><h3>Simulated</h3>${MapView(r,sim,{label:'simulated'})}</div></div>${Legend()}
+<table><thead><tr><th>Measure</th><th>Baseline</th><th>Simulated</th></tr></thead><tbody><tr><td>Overall risk</td><td>${Badge(worst(f.seg))}</td><td>${Badge(worst(sim))}</td></tr>
+<tr><td>High segments</td><td>${cnt(f.seg,'H')}</td><td>${cnt(sim,'H')}</td></tr><tr><td>Load vs capacity <span class="chip">Estimate</span></td><td>${p?Math.round(p)+'%':'n/a'}</td><td>${p?Math.round(p*ACT[a].f)+'%':'n/a'}</td></tr></tbody></table></div>`}
+
+function RecDetail(rec){const r=rt(rec.route),f=r.w[rec.win];const p=f.cap?Math.round(f.pred/f.cap*100):null;
+const sim=simSeg(f.seg,'add');
+const QA=[['Why this route and time?',`${r.id} in ${WINS[rec.win]} shows ${cnt(f.seg,'H')} High and ${cnt(f.seg,'M')} Medium segments, with predicted demand ${f.pred}${f.cap?` against an estimated capacity of ${f.cap} (${p}%)`:''}.`],
+['How confident is the forecast?',`Confidence is ${Math.round(f.conf*100)}% in this demo data.${f.conf<.6?' That is low, so review before acting.':''}`],
+['What would adding a trip change?',`In this simulation, High segments go from ${cnt(f.seg,'H')} to ${cnt(sim,'H')}. This is an estimate from demo data, not a dispatch.`]];
+return `<div class="panel"><h2>${esc(rec.title)}</h2><dl><dt>Problem</dt><dd>${explain(r,rec.win)}</dd><dt>Evidence</dt><dd>Observed ${f.obs}, predicted ${f.pred}, confidence ${Math.round(f.conf*100)}% <span class="chip">Demo data</span></dd>
+<dt>Affected</dt><dd>${esc(r.id)} · ${esc(r.name)}, ${WINS[rec.win]}</dd><dt>Proposed response</dt><dd>${esc(rec.response)}</dd><dt>Assumptions</dt><dd>${esc(rec.assumptions)}</dd><dt>Expected effect</dt><dd>${esc(rec.effect)} <span class="chip">Estimate</span></dd></dl>
+<p><button class="btn pri" data-a="simulate">Simulate</button></p></div>
+<div class="panel"><h2>Ask about this recommendation</h2><div class="q" role="group" aria-label="Sample questions">${QA.map((q,i)=>`<button data-a="ask" data-v="${i}" aria-pressed="${S.q==i}">${q[0]}</button>`).join('')}</div>
+${S.q!=null?`<div class="ans" role="status">${QA[S.q][1]}</div>`:'<p class="mut">Answers use only the demo data shown on this page.</p>'}</div>
+${S.sim?ScenarioCompare(r,rec):''}`}
+
+function RecPage(){const rec=S.recs.find(x=>x.id==S.rec);
+return `<h1>Recommendations</h1><p class="mut">Prioritised for ${DATA[S.mode].label}, ordered by forecast risk.</p>${S.loading?'<div class="skel"></div>':S.recs.length?`<div class="recs"><div class="rl">${S.recs.map((x,i)=>{const k=worst(rt(x.route).w[x.win].seg);return `<button data-a="openrec" data-v="${x.id}" aria-current="${S.rec==x.id}"><span class="mut">#${i+1}</span> ${Badge(k)}<br><b>${esc(x.title)}</b></button>`}).join('')}</div><div>${rec?RecDetail(rec):'<div class="empty">Select a recommendation to see details.</div>'}</div></div>`:'<div class="empty">No recommendations right now.</div>'}`}
+
+function Incidents(){return `<h2 style="margin-top:28px">Open incident reports</h2>${S.inc.length?`<table><thead><tr><th>ID</th><th>Type</th><th>Where</th><th>Time</th><th>Description</th></tr></thead><tbody>${S.inc.map(i=>`<tr><td>${esc(i.id)}</td><td>${esc(i.type)}</td><td>${esc(i.where)}</td><td>${esc(i.time)}</td><td>${esc(i.desc)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No open reports.</div>'}`}
+
+function IncidentDialog(){const t=new Date().toTimeString().slice(0,5);
+return `<dialog id="dlg" aria-labelledby="dt">${S.sent?`<h2 id="dt">Report submitted</h2><p>${esc(S.sent.id)} was added to open incidents. <span class="chip">Mock submission</span></p><button class="btn pri" data-a="closemodal">Close</button>`:
+`<form id="frm"><h2 id="dt">Report an incident</h2><label for="f1">Issue type</label><select id="f1" name="type"><option>Overcrowding</option><option>Breakdown</option><option>Diversion / road block</option><option>Platform congestion</option><option>Other</option></select>
+<label for="f2">${DATA[S.mode].noun=='route'?'Route':'Line'}</label><select id="f2" name="where">${S.items.map(r=>`<option>${esc(r.id)}</option>`).join('')}</select>
+<label for="f3">Time</label><input id="f3" name="time" type="time" value="${t}" required><label for="f4">Description</label><textarea id="f4" name="desc" rows="3" required></textarea>
+<p style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn" data-a="closemodal">Cancel</button><button class="btn pri">Submit report</button></p></form>`}</dialog>`}
+
+function Login(){return `<div class="login"><h1>Marina Ops</h1><p class="mut">Chennai public transport operations · demo with fictional data</p><div class="seg" role="group" aria-label="Choose transport mode">${Object.keys(DATA).map(m=>`<button data-a="mode" data-v="${m}" aria-pressed="${S.mode==m}">${m}</button>`).join('')}</div><button class="btn pri" data-a="enter" style="width:100%;padding:10px">Enter demo</button></div>`}
+
+/* ============ app shell ============ */
+function view(){if(S.screen=='login')return Login();
+let body=S.tab=='rec'?RecPage():S.route&&!S.loading?RoutePage():`<h1>${DATA[S.mode].label} network</h1><p class="mut">Forecast risk for ${WINS[S.win]} <span class="chip">Demo data</span></p>${Summary()}${RouteList()}${Incidents()}`;
+return `${Header()}<main>${AlertBanner()}${body}</main>${IncidentDialog()}`}
+function render(){const a=document.getElementById('app');a.innerHTML=view();
+if(S.fk){const [k,v]=S.fk;const el=a.querySelector(`[data-a="${k}"][data-v="${v}"]`)||a.querySelector(`[data-a="${k}"]:not([data-v])`);el&&el.focus()}
+const d=document.getElementById('dlg');if(d&&S.modal&&!d.open){d.showModal();d.addEventListener('close',()=>{S.modal=false;S.sent=null;render()},{once:true})}}
+async function load(){S.loading=true;render();[S.items,S.al,S.recs,S.inc]=await Promise.all([api.routes(S.mode),api.alert(S.mode),api.recs(S.mode),api.incidents()]);S.loading=false;render()}
+
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,v=b.dataset.v;S.fk=[a,v];
+if(a=='mode'){S.mode=v;if(S.screen=='login')return render();Object.assign(S,{group:'All',route:null,row:null,rec:null,sim:null,q:null,menu:false,alert:false});return load()}
+if(a=='enter'){S.screen='app';S.fk=null;return load()}
+if(a=='signout'){S.screen='login';S.menu=false;return render()}
+if(a=='menu')S.menu=!S.menu;
+if(a=='alert')S.alert=!S.alert;
+if(a=='group')S.group=v;
+if(a=='route'){S.route=v;S.row=S.win;S.fk=null;scrollTo(0,0)}
+if(a=='back'){S.route=null;S.row=null;S.fk=['route',v||S.route]}
+if(a=='row')S.row=S.row==+v?null:+v;
+if(a=='tab'){S.tab=v;S.route=null;S.row=null;if(v=='rec'&&!S.rec&&S.recs[0])S.rec=S.recs[0].id}
+if(a=='openrec'){S.tab='rec';S.rec=v;S.sim=null;S.q=null;S.alert=false;S.fk=null;S.route=null}
+if(a=='simulate')S.sim={act:'add'};
+if(a=='simact')S.sim={act:v};
+if(a=='ask')S.q=+v;
+if(a=='report'){S.modal=true;S.sent=null;S.menu=false}
+if(a=='closemodal'){const d=document.getElementById('dlg');S.modal=false;S.sent=null;d&&d.open&&d.close();S.fk=['report',null]}
+render()});
+document.addEventListener('change',e=>{if(e.target.id=='win'){S.win=+e.target.value;S.row=S.route?S.win:null;S.fk=null;render();document.getElementById('win').focus()}});
+document.addEventListener('submit',async e=>{if(e.target.id!='frm')return;e.preventDefault();const f=new FormData(e.target);
+const inc={id:'INC-'+(106+S.inc.length),type:f.get('type'),where:f.get('where'),time:f.get('time'),desc:f.get('desc'),status:'Open'};
+const btn=e.target.querySelector('.pri');btn.disabled=true;btn.textContent='Submitting…';
+await api.submitIncident(inc);S.inc.unshift(inc);S.sent=inc;const d=document.getElementById('dlg');d.close();S.modal=true;render()});
+document.addEventListener('keydown',e=>{if(e.key=='Escape'&&S.menu){S.menu=false;render()}});
+render();
+</script></body></html>
