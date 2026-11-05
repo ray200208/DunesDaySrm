@@ -1,0 +1,14 @@
+# Ignore all data directories and raw files
+Data/
+Public Transport/
+Road Network Old CMA/
+*.csv
+*.shp
+*.dbf
+*.shx
+*.prj
+*.qmd
+*.qix
+*.cpg
+*.kml
+*.pdf
