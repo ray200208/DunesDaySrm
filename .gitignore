@@ -12,3 +12,12 @@ Road Network Old CMA/
 *.cpg
 *.kml
 *.pdf
+
+# Environment variables & secrets
+.env
+.env.*
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class

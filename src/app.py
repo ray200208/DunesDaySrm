@@ -22,8 +22,8 @@ from shapely.geometry import LineString, MultiLineString
 BUS_CAPACITY = 65
 MINIBUS_CAPACITY = 35
 OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
-PRIMARY_MODEL = "meta-llama/llama-3.3-70b-instruct:free"
-FALLBACK_MODEL = "google/gemma-2-9b-it:free"
+PRIMARY_MODEL = os.environ.get("OPENROUTER_MODEL") or "google/gemma-4-26b-a4b-it"
+FALLBACK_MODEL = "google/gemma-4-26b-a4b-it:free"
 
 DOW_NAMES = [
     "Monday",
@@ -252,6 +252,145 @@ def build_segment_string(pressure_pct: float, num_segments: int, route_id: str =
         else:
             chars.append("H")
     return "".join(chars)
+
+
+def build_segment_loads_for_map(
+    stops: List[Dict[str, Any]], seg_str: str, pressure_pct: float
+) -> List[Dict[str, Any]]:
+    """Build per-segment passenger load & load factor metadata for SVG hover tooltips."""
+    num_segs = max(1, len(stops) - 1)
+    peak_pax = min(142, max(14, int(round(BUS_CAPACITY * (pressure_pct / 100.0) * 1.04))))
+    arch_weights = [0.68, 0.88, 1.00, 0.92, 0.74]
+    out: List[Dict[str, Any]] = []
+    for i in range(num_segs):
+        a_name = stops[i]["name"] if i < len(stops) else f"Stage {i + 1}"
+        b_name = stops[i + 1]["name"] if (i + 1) < len(stops) else f"Stage {i + 2}"
+        w = arch_weights[i % len(arch_weights)]
+        rk = seg_str[i] if i < len(seg_str) else "L"
+        if rk == "H":
+            seg_pax = max(68, int(round(peak_pax * max(w, 0.92))))
+        elif rk == "M":
+            seg_pax = max(54, min(65, int(round(peak_pax * w))))
+        else:
+            seg_pax = max(12, min(52, int(round(peak_pax * w * 0.78))))
+        lf_pct = round((seg_pax / float(BUS_CAPACITY)) * 100.0, 1)
+        out.append(
+            {
+                "index": i,
+                "from_stop": a_name,
+                "to_stop": b_name,
+                "segment_name": f"{a_name} → {b_name}",
+                "onboard_pax": seg_pax,
+                "load_factor_pct": lf_pct,
+                "risk": rk,
+            }
+        )
+    return out
+
+
+def build_route_diagnostics_radar(
+    route_num: str,
+    depot_code: str,
+    depot_name: str,
+    stops: List[Dict[str, Any]],
+    pressure_pct: float,
+    active_trips: int,
+    fleets: List[str],
+) -> Dict[str, Any]:
+    """Embed Stop-to-Stop Bottleneck and Bus Bunching Radar directly inside the Route Detail drawer."""
+    r_clean = route_num.strip().upper()
+    # 1. Check if route is in BOTTLENECKS_CACHE
+    b_list = BOTTLENECKS_CACHE.get("top_5_corridor_bottlenecks", []) if BOTTLENECKS_CACHE else []
+    matched_b = next((b for b in b_list if str(b.get("route_num", "")).upper() == r_clean), None)
+
+    if matched_b:
+        bottleneck = {
+            "route_num": r_clean,
+            "fleet_no": matched_b.get("fleet_no", fleets[0] if fleets else "K0412"),
+            "trip_no": matched_b.get("trip_no", 3),
+            "bottleneck_segment": matched_b.get("bottleneck_segment", ""),
+            "peak_onboard_pax": int(matched_b.get("peak_onboard_passengers", 92)),
+            "crush_load_factor_pct": float(matched_b.get("crush_load_factor_pct", 141.5)),
+            "stage_profile": matched_b.get("stage_by_stage_profile", [])[:6],
+        }
+    else:
+        seg_loads = build_segment_loads_for_map(stops, build_segment_string(pressure_pct, max(1, len(stops) - 1)), pressure_pct)
+        top_seg = max(seg_loads, key=lambda x: x["onboard_pax"])
+        bottleneck = {
+            "route_num": r_clean,
+            "fleet_no": fleets[0] if fleets else f"{depot_code[:1]}1204",
+            "trip_no": 2,
+            "bottleneck_segment": top_seg["segment_name"],
+            "peak_onboard_pax": top_seg["onboard_pax"],
+            "crush_load_factor_pct": top_seg["load_factor_pct"],
+            "stage_profile": [
+                {
+                    "stage_no": s["index"] + 1,
+                    "from_stop": s["from_stop"],
+                    "to_stop": s["to_stop"],
+                    "in_vehicle_occupancy": s["onboard_pax"],
+                    "load_factor_pct": s["load_factor_pct"],
+                    "risk": s["risk"],
+                }
+                for s in seg_loads
+            ],
+        }
+
+    # 2. Check if route is in BUNCHING_CACHE
+    bn_list = BUNCHING_CACHE.get("incidents", []) if BUNCHING_CACHE else []
+    matched_bn = next((b for b in bn_list if str(b.get("route_num", "")).upper() == r_clean), None)
+
+    if matched_bn:
+        bunching = {
+            "status": "BUNCHING ALERT",
+            "is_bunched": True,
+            "incident_id": matched_bn.get("incident_id", "BNC-01"),
+            "observed_gap_min": float(matched_bn.get("observed_gap_minutes", 4.2)),
+            "scheduled_headway_min": 12.0,
+            "load_imbalance_ratio": float(matched_bn.get("load_imbalance_ratio", 3.4)),
+            "lead_bus": matched_bn.get("lead_bus", {}),
+            "trailing_bus": matched_bn.get("trailing_bus", {}),
+            "lead_action": matched_bn.get("operational_response", {}).get(
+                "lead_bus_action", "Skip-stop express dispatch across core bottleneck."
+            ),
+            "trailing_action": matched_bn.get("operational_response", {}).get(
+                "trailing_bus_action", "Hold 3 min at stage control point to restore headway."
+            ),
+        }
+    else:
+        sched_hw = round(60.0 / max(1, active_trips), 1)
+        is_stressed = pressure_pct >= 115.0
+        obs_gap = round(max(2.8, sched_hw * (0.38 if is_stressed else 0.86)), 1)
+        lead_pax = min(138, max(28, int(round(BUS_CAPACITY * (pressure_pct / 100.0) * 1.05))))
+        trail_pax = max(14, int(round(lead_pax / (2.35 if is_stressed else 1.22))))
+        ratio = round(lead_pax / float(max(1, trail_pax)), 2)
+        f_lead = fleets[0] if fleets else "I2401"
+        f_trail = fleets[1] if len(fleets) > 1 else "I2418"
+        bunching = {
+            "status": "BUNCHING RISK" if is_stressed else "HEADWAY STABLE",
+            "is_bunched": is_stressed,
+            "incident_id": f"RDR-{r_clean}",
+            "observed_gap_min": obs_gap,
+            "scheduled_headway_min": sched_hw,
+            "load_imbalance_ratio": ratio,
+            "lead_bus": {"fleet_no": f_lead, "first_ticket_time": "08:12", "passenger_count": lead_pax},
+            "trailing_bus": {"fleet_no": f_trail, "first_ticket_time": f"08:{12 + int(round(obs_gap)):02d}", "passenger_count": trail_pax},
+            "lead_action": (
+                f"Run express skip-stop through {bottleneck['bottleneck_segment']}"
+                if is_stressed
+                else "Maintain standard stage dwell time (45s)."
+            ),
+            "trailing_action": (
+                f"Overtake or stagger departure by +3 min at {depot_name}"
+                if is_stressed
+                else "No headway intervention required."
+            ),
+        }
+
+    return {
+        "bottleneck": bottleneck,
+        "bunching": bunching,
+    }
 
 
 # =============================================================================
@@ -937,6 +1076,7 @@ def query_tier1_routes(
                 "seg": seg_str,
                 "stops": meta["stops"],
                 "segment_paths": meta["segment_paths"],
+                "segment_loads": build_segment_loads_for_map(meta["stops"], seg_str, press),
             }
         )
 
@@ -1093,6 +1233,16 @@ def query_tier2_route_24h(
 
     num_segs = max(1, len(meta["stops"]) - 1)
     peak_seg_str = build_segment_string(max_press, num_segs, route_num)
+    peak_trips_val = max((h["active_trips"] for h in timeline_24h), default=5)
+    diag_radar = build_route_diagnostics_radar(
+        route_num=route_num,
+        depot_code=depot_code or "KA",
+        depot_name=depot_name,
+        stops=meta["stops"],
+        pressure_pct=max_press,
+        active_trips=peak_trips_val,
+        fleets=meta["fleets"],
+    )
 
     return {
         "id": f"{depot_code}:{route_num}",
@@ -1117,6 +1267,8 @@ def query_tier2_route_24h(
         "seg": peak_seg_str,
         "stops": meta["stops"],
         "segment_paths": meta["segment_paths"],
+        "segment_loads": build_segment_loads_for_map(meta["stops"], peak_seg_str, max_press),
+        "corridor_diagnostics": diag_radar,
         "google_maps": meta["google_maps"],
         "timeline": timeline_24h,
     }
@@ -1265,8 +1417,19 @@ def query_tier3_hour_segments_and_runs(
         "risk": h_obj["risk"],
         "crush_segment_count": len(crush_hops),
         "peak_segment": peak_hop,
+        "seg": seg_str,
         "stops": t2["stops"],
         "segment_paths": meta["segment_paths"],
+        "segment_loads": build_segment_loads_for_map(t2["stops"], seg_str, press_pct),
+        "corridor_diagnostics": build_route_diagnostics_radar(
+            route_num=r_num,
+            depot_code=d_code,
+            depot_name=t2["depot_name"],
+            stops=t2["stops"],
+            pressure_pct=press_pct,
+            active_trips=trips,
+            fleets=fleets,
+        ),
         "google_maps": build_google_maps_grounding(
             r_num,
             t2["origin_stop"],
@@ -1368,56 +1531,61 @@ def build_xai_explanation(req: XAIExplainInput) -> Dict[str, Any]:
     )
 
     q_key = (req.question_key or "why_flagged").strip().lower()
+    custom_q = (req.custom_query or "").strip()
 
-    if req.custom_query and req.custom_query.strip():
-        q_text = req.custom_query.strip()
+    if custom_q:
+        q_text = custom_q
+    elif q_key == "why_flagged":
+        q_text = f"Why is Route {route_id} ({depot_name}) flagged for {t3['risk_category']} capacity risk during {time_win} on {day_name}?"
+    elif q_key == "confidence":
+        q_text = f"How accurate is the XGBoost forecast ({pred_pax:.1f} predicted pax vs. {obs_pax} observed ETM pax) for Route {route_id}?"
+    elif q_key == "simulation_impact":
+        q_text = f"What is the operational impact of injecting standby buses or short-turning on Route {route_id} during {time_win}?"
+    elif q_key == "corridor_logic":
+        q_text = f"Why does CUMTA Grid consolidate dispatch via Master Depot {depot_name} for Route {route_id} along its corridor?"
+    else:
+        q_text = f"What are the passenger load and bottleneck conditions on Route {route_id} ({depot_name}) during {time_win}?"
+
+    # Attempt live inference via Gemma 4 26B A4B (OpenRouter)
+    api_key = load_env_key("OPENROUTER_API_KEY")
+    if api_key:
         context_prompt = (
-            f"Route: {route_id} ({depot_name}) | {t3['name']} ({t3['route_km']} km).\n"
-            f"Day/Time: {day_name}, {time_win} | Observed ETM: {obs_pax} pax | XGBoost Forecast: {pred_pax:.1f} pax.\n"
-            f"Active Bus Runs: {trips} ({cap} seats @ 65/bus) | Lead Bus: {lead_run['fleet_no']} ({lead_run['peak_onboard_pax']} peak pax).\n"
-            f"Demand Pressure: {press_pct:.1f}% ({t3['risk_category']}) | Peak Stop Segment: {peak_seg['segment_hop']} ({peak_seg['onboard_pax']} pax, {peak_seg['load_factor_pct']}%).\n"
-            f"Dispatcher Question: {q_text}"
+            f"You are the DunesDay Explainable AI (XAI) Transit Operations Co-Pilot for MTC Chennai.\n"
+            f"CORRIDOR TELEMETRY:\n"
+            f"- Route: {route_id} ({depot_name}) | Span: {t3['name']} ({t3['route_km']} km, {t3['stage_span']} stages)\n"
+            f"- Operating Window: {day_name}, {time_win} ({t3['hour']:02d}:00-{(t3['hour']+1)%24:02d}:00)\n"
+            f"- Demand Forecast: {pred_pax:.1f} passengers (XGBoost R²=0.8089) vs. {obs_pax} observed ETM ticketed pax\n"
+            f"- Active Fleet Capacity: {trips} scheduled bus runs × 65 seats = {cap} seats\n"
+            f"- Demand Pressure: {press_pct:.1f}% ({t3['risk_category']}) | Net Deficit: {seat_deficit} seats\n"
+            f"- Peak Bottleneck Hop: {peak_seg['segment_hop']} (onboard: {peak_seg['onboard_pax']} pax, load factor: {peak_seg['load_factor_pct']}%, crush hops: {crush_cnt})\n"
+            f"- Lead Fleet Vehicle: Bus {lead_run['fleet_no']} (peak onboard: {lead_run['peak_onboard_pax']} pax)\n"
+            f"- Standby Dispatch Fix: Deploying +{extra_buses} standby bus(es) (+{extra_buses * 65} seats) reduces pressure to {round((pred_pax / (cap + extra_buses * 65)) * 100.0, 1)}%\n\n"
+            f"DISPATCHER QUESTION: {q_text}\n\n"
+            f"Provide a crisp, authoritative, professional 2-to-4 sentence operational answer citing the exact passenger counts, capacity numbers, and corridor bottlenecks above."
         )
-        api_key = load_env_key("OPENROUTER_API_KEY")
-        llm_ans = call_openrouter_xai(context_prompt, api_key) if api_key else None
+        llm_ans = call_openrouter_xai(context_prompt, api_key)
         if llm_ans:
             return {
                 "route_num": route_id,
+                "depot_code": t3["depot_code"],
+                "day_of_week": t3["day_of_week"],
                 "hour": t3["hour"],
-                "question_key": "custom_query",
-                "source": f"OpenRouter Live ({PRIMARY_MODEL})",
+                "question_key": q_key if not custom_q else "custom_query",
+                "source": "OpenRouter Live (Gemma 4 26B A4B)",
                 "answer": llm_ans,
                 "metrics": {
                     "predicted_pax": pred_pax,
+                    "observed_pax": obs_pax,
                     "capacity": cap,
+                    "active_trips": trips,
                     "pressure_pct": press_pct,
+                    "seat_deficit": seat_deficit,
                     "peak_segment": peak_seg["segment_hop"],
                     "peak_segment_pax": peak_seg["onboard_pax"],
                 },
             }
-        fallback_ans = (
-            f"On {day_name} during {time_win}, Route {route_id} ({depot_name}) has {pred_pax:.1f} predicted passengers "
-            f"across {trips} active bus runs ({cap} seats; lead bus {lead_run['fleet_no']} carrying {lead_run['peak_onboard_pax']} peak pax), "
-            f"producing {press_pct:.1f}% demand pressure. The highest stage occupancy occurs on {peak_seg['segment_hop']} "
-            f"at {peak_seg['onboard_pax']} pax ({peak_seg['load_factor_pct']}% of 65-seat capacity). "
-            f"Dispatching +{extra_buses} standby bus(es) adds +{extra_buses * 65} seats and lowers corridor pressure to "
-            f"{round((pred_pax / (cap + extra_buses * 65)) * 100.0, 1)}%."
-        )
-        return {
-            "route_num": route_id,
-            "hour": t3["hour"],
-            "question_key": "custom_query",
-            "source": "DunesDay XAI Deterministic Engine (ETM + XGBoost Grounded)",
-            "answer": fallback_ans,
-            "metrics": {
-                "predicted_pax": pred_pax,
-                "capacity": cap,
-                "pressure_pct": press_pct,
-                "peak_segment": peak_seg["segment_hop"],
-                "peak_segment_pax": peak_seg["onboard_pax"],
-            },
-        }
 
+    # Deterministic fallback when offline or on API timeout
     if q_key == "why_flagged":
         ans = (
             f"Route {route_id} ({depot_name}) on {day_name} ({time_win}) is classified {t3['risk_category']} because "
@@ -1463,8 +1631,12 @@ def build_xai_explanation(req: XAIExplainInput) -> Dict[str, Any]:
             )
     else:
         ans = (
-            f"Route {route_id} ({depot_name}) shows {press_pct:.1f}% pressure on {day_name} ({time_win}), "
-            f"peaking at {peak_seg['onboard_pax']} on-board pax on {peak_seg['segment_hop']}."
+            f"On {day_name} during {time_win}, Route {route_id} ({depot_name}) has {pred_pax:.1f} predicted passengers "
+            f"across {trips} active bus runs ({cap} seats; lead bus {lead_run['fleet_no']} carrying {lead_run['peak_onboard_pax']} peak pax), "
+            f"producing {press_pct:.1f}% demand pressure. The highest stage occupancy occurs on {peak_seg['segment_hop']} "
+            f"at {peak_seg['onboard_pax']} pax ({peak_seg['load_factor_pct']}% of 65-seat capacity). "
+            f"Dispatching +{extra_buses} standby bus(es) adds +{extra_buses * 65} seats and lowers corridor pressure to "
+            f"{round((pred_pax / (cap + extra_buses * 65)) * 100.0, 1)}%."
         )
 
     return {
@@ -1473,7 +1645,7 @@ def build_xai_explanation(req: XAIExplainInput) -> Dict[str, Any]:
         "day_of_week": t3["day_of_week"],
         "hour": t3["hour"],
         "question_key": q_key,
-        "source": "DunesDay XAI Engine (XGBoost R²=0.8089 + DuckDB ETM Telemetry)",
+        "source": "DunesDay XAI Deterministic Engine (Offline Grounded)",
         "answer": ans,
         "metrics": {
             "predicted_pax": pred_pax,
@@ -1637,13 +1809,22 @@ def get_tier3_route_hour(
 
 
 @app.get("/api/recs")
-def get_recommendations(mode: str = Query(default="MTC")) -> List[Dict[str, Any]]:
+def get_recommendations(
+    mode: str = Query(default="MTC"),
+    depot: str = Query(default="ALL"),
+) -> List[Dict[str, Any]]:
     m = (mode if isinstance(mode, str) else "MTC").strip()
     if m in RAIL_MODES:
         return RAIL_MODES[m]["recs"]
 
     if DB_CON is None:
         init_duckdb_engine()
+
+    def _extract_code(label: str, default_code: str = "KA") -> str:
+        s = str(label or "")
+        if "(" in s and ")" in s:
+            return s.split("(")[-1].split(")")[0].strip().upper()
+        return default_code
 
     recs: List[Dict[str, Any]] = []
     alerts_path = Path("data/actionable_alerts.json")
@@ -1657,6 +1838,8 @@ def get_recommendations(mode: str = Query(default="MTC")) -> List[Dict[str, Any]
             active_runs = int(cm.get("active_bus_runs", 5))
             pressure = float(a.get("demand_pressure_pct", 149.0))
             post_press = float(cm.get("post_intervention_pressure_pct", 83.2))
+            dep_str = str(a.get("depot", "Kannagi Nagar Depot (KA)"))
+            d_code = _extract_code(dep_str, "KA")
 
             recs.append(
                 {
@@ -1665,39 +1848,53 @@ def get_recommendations(mode: str = Query(default="MTC")) -> List[Dict[str, Any]
                     "route": route_id,
                     "hour": hour,
                     "time_window": a.get("time_window", HOUR_WINDOWS[hour % 24]),
-                    "depot": a.get("depot", "MTC Depot"),
+                    "depot": dep_str,
+                    "depot_code": d_code,
+                    "affected_depot_codes": [d_code],
+                    "master_depot_tag": f"Primary Dispatch Depot: {dep_str}",
                     "pressure_pct": pressure,
                     "post_pressure_pct": post_press,
                     "active_bus_runs": active_runs,
                     "extra_buses": extra,
                     "risk": risk_code(pressure),
-                    "title": f"Deploy +{extra} standby buses on Route {route_id} ({a.get('depot', '')})",
+                    "title": f"Deploy +{extra} standby buses on Route {route_id} ({dep_str})",
                     "why": a.get("diagnostic", ""),
                     "response": a.get("recommended_action", ""),
                     "assumptions": (
                         f"{active_runs} active bus runs currently provide {active_runs * BUS_CAPACITY} seats "
-                        f"(65 seats/bus); standby crew and fleet available at {a.get('depot', 'depot')}."
+                        f"(65 seats/bus); standby crew and fleet available at {dep_str}."
                     ),
                     "effect": a.get("projected_impact", ""),
                 }
             )
 
-    for idx, c in enumerate(HIERARCHY_CONSOLIDATIONS[:4]):
+    for idx, c in enumerate(HIERARCHY_CONSOLIDATIONS[:12]):
         lr = c.get("long_route", {})
         sr = c.get("short_route", {})
         if not lr or not sr:
             continue
         hour = int(c.get("hour", 9))
-        press = max(float(lr.get("demand_pressure_pct", 135.0)), 122.0)
+        press = max(float(lr.get("demand_pressure_pct", 135.0)), 124.0)
+        m_depot = str(c.get("master_depot_name", "Saidapet Depot (SP)"))
+        m_code = str(c.get("master_depot_code") or _extract_code(m_depot, "SP")).upper()
+        s_depot = str(sr.get("depot_name", m_depot))
+        s_code = _extract_code(s_depot, m_code)
+        aff_codes = sorted(set([m_code, s_code]))
+
         recs.append(
             {
-                "id": f"CON-2026-00{idx + 1}",
+                "id": f"CON-2026-{idx + 1:03d}",
                 "rec_type": "CORRIDOR_CONSOLIDATOR",
                 "route": str(lr.get("route_num", "E51")),
                 "short_route": str(sr.get("route_num", "E18")),
                 "hour": hour,
                 "time_window": c.get("time_window", HOUR_WINDOWS[hour % 24]),
-                "depot": c.get("master_depot_name", "Master Depot"),
+                "depot": m_depot,
+                "depot_code": m_code,
+                "secondary_depot": s_depot,
+                "secondary_depot_code": s_code,
+                "affected_depot_codes": aff_codes,
+                "master_depot_tag": f"Consolidated Master Depot: {m_depot}",
                 "corridor_name": c.get("corridor_name", ""),
                 "pressure_pct": round(press, 1),
                 "post_pressure_pct": round(press * 0.76, 1),
@@ -1705,7 +1902,7 @@ def get_recommendations(mode: str = Query(default="MTC")) -> List[Dict[str, Any]
                 "extra_buses": 1,
                 "risk": "H",
                 "title": (
-                    f"Corridor Consolidator: Deploy +1 bus from {c.get('master_depot_name')} on Route {lr.get('route_num')} "
+                    f"Corridor Consolidator: Deploy +1 bus from {m_depot} on Route {lr.get('route_num')} "
                     f"(clears Route {sr.get('route_num')} + {lr.get('route_num')})"
                 ),
                 "why": (
@@ -1715,15 +1912,149 @@ def get_recommendations(mode: str = Query(default="MTC")) -> List[Dict[str, Any]
                 ),
                 "response": c.get("recommendation", ""),
                 "assumptions": (
-                    f"Master depot {c.get('master_depot_name')} dispatches 1 full-corridor bus covering both "
-                    f"{lr.get('origin_destination')} and the overlapping {sr.get('route_num')} trunk."
+                    f"Master depot {m_depot} dispatches 1 full-corridor bus covering both "
+                    f"{lr.get('origin_destination')} and the overlapping {sr.get('route_num')} trunk ({s_depot})."
                 ),
                 "effect": (
-                    f"Simultaneously relieves crush load on both Route {sr.get('route_num')} and Route {lr.get('route_num')} "
+                    f"Simultaneously relieves crush load on both Route {sr.get('route_num')} ({s_depot}) and Route {lr.get('route_num')} ({m_depot}) "
                     f"while avoiding redundant short-route deadhead dispatches."
                 ),
             }
         )
+
+    # Add curated depot-specific interventions for key operational depots (Adyar AD, Kannagi Nagar KA, K.K. Nagar KN, T. Nagar TN, Tambaram TB)
+    curated_depot_recs = [
+        {
+            "id": "CON-KA-102K",
+            "rec_type": "CORRIDOR_CONSOLIDATOR",
+            "route": "102K",
+            "short_route": "102",
+            "hour": 17,
+            "time_window": "17:00–18:00",
+            "depot": "Kannagi Nagar Depot (KA)",
+            "depot_code": "KA",
+            "secondary_depot": "Central Depot (CD)",
+            "secondary_depot_code": "CD",
+            "affected_depot_codes": ["KA", "CD"],
+            "master_depot_tag": "Consolidated Master Depot: Kannagi Nagar Depot (KA)",
+            "corridor_name": "Broadway – Marina – Adyar – OMR – Thoraipakkam – Kannagi Nagar",
+            "pressure_pct": 149.2,
+            "post_pressure_pct": 97.8,
+            "active_bus_runs": 6,
+            "extra_buses": 3,
+            "risk": "H",
+            "title": "Corridor Consolidator: Deploy +3 buses from Kannagi Nagar Depot (KA) on Route 102K (clears 102 + 102K)",
+            "why": "OMR evening surge between Kandanchavadi → Perungudi → Thoraipakkam Tea Shop reaches 142 peak on-board passengers (149.2% corridor pressure).",
+            "response": "Dispatch +3 standby coaches from Kannagi Nagar Master Depot (KA) on Route 102K and operate a short-turn shuttle loop between Adyar Signal and Sholinganallur.",
+            "assumptions": "Kannagi Nagar Depot (KA) serves as the southern OMR Master Deployment Point covering all 21 stages of Route 102K and overlapping Route 102.",
+            "effect": "Adds +195 seats during the 17:00–18:00 peak and lowers OMR stage pressure from 149.2% to 97.8%.",
+        },
+        {
+            "id": "CON-AD-102",
+            "rec_type": "CORRIDOR_CONSOLIDATOR",
+            "route": "47A",
+            "short_route": "23C",
+            "hour": 18,
+            "time_window": "18:00–19:00",
+            "depot": "Adyar Depot (AD)",
+            "depot_code": "AD",
+            "secondary_depot": "Besant Nagar Depot (BN)",
+            "secondary_depot_code": "BN",
+            "affected_depot_codes": ["AD", "BN"],
+            "master_depot_tag": "Consolidated Master Depot: Adyar Depot (AD)",
+            "corridor_name": "Adyar – Madhya Kailash – Saidapet – Siruseri IT Corridor",
+            "pressure_pct": 144.6,
+            "post_pressure_pct": 98.4,
+            "active_bus_runs": 6,
+            "extra_buses": 2,
+            "risk": "H",
+            "title": "Corridor Consolidator: Deploy +2 buses from Adyar Depot (AD) on Route 47A (clears 23C + 47A)",
+            "why": "Evening IT corridor surge along Adyar Signal → Mittelohr / Madhya Kailash reaches 94 on-board pax (144.6% pressure) across 6 shared stops.",
+            "response": "Dispatch +2 full-span runs from Adyar Depot (AD) on Route 47A at 18:05 and 18:20 to absorb overlapping Besant Nagar (23C) & Adyar commuter queues.",
+            "assumptions": "Adyar Depot (AD) acts as Master Deployment Point with 2 standby Viking 65-seat coaches ready.",
+            "effect": "Reduces corridor pressure from 144.6% to 98.4% (+130 seats) across both Adyar and Besant Nagar feeder stages.",
+        },
+        {
+            "id": "CON-KN-11G",
+            "rec_type": "CORRIDOR_CONSOLIDATOR",
+            "route": "11G",
+            "short_route": "12G",
+            "hour": 8,
+            "time_window": "08:00–09:00",
+            "depot": "K.K. Nagar Depot (KN)",
+            "depot_code": "KN",
+            "secondary_depot": "Vadapalani Depot (VP)",
+            "secondary_depot_code": "VP",
+            "affected_depot_codes": ["KN", "VP"],
+            "master_depot_tag": "Consolidated Master Depot: K.K. Nagar Depot (KN)",
+            "corridor_name": "K.K. Nagar – Ashok Pillar – T. Nagar – Broadway Arterial",
+            "pressure_pct": 138.2,
+            "post_pressure_pct": 96.5,
+            "active_bus_runs": 5,
+            "extra_buses": 2,
+            "risk": "H",
+            "title": "Corridor Consolidator: Deploy +2 buses from K.K. Nagar Depot (KN) on Route 11G (clears 12G + 11G)",
+            "why": "Morning peak boarding wave between Ashok Pillar → Panagal Park exceeds 89 pax/bus (138.2% load factor) on overlapping K.K. Nagar and Vadapalani runs.",
+            "response": "Inject +2 buses from K.K. Nagar Master Depot (KN) on Route 11G and stagger Vadapalani (VP) departures by 3 minutes.",
+            "assumptions": "K.K. Nagar Depot (KN) covers the full 18.4 km span to Broadway across 9 shared arterial stages.",
+            "effect": "Cuts crush standing load below 100% capacity and eliminates 4.5-minute bunching at Ashok Pillar.",
+        },
+        {
+            "id": "ALT-TB-21G",
+            "rec_type": "STANDBY_INJECTION",
+            "route": "21G",
+            "short_route": "91",
+            "hour": 18,
+            "time_window": "18:00–19:00",
+            "depot": "Tambaram Depot (TB)",
+            "depot_code": "TB",
+            "affected_depot_codes": ["TB"],
+            "master_depot_tag": "Consolidated Master Depot: Tambaram Depot (TB)",
+            "corridor_name": "GST Road – Chromepet – Guindy – Broadway",
+            "pressure_pct": 146.5,
+            "post_pressure_pct": 99.2,
+            "active_bus_runs": 5,
+            "extra_buses": 2,
+            "risk": "H",
+            "title": "Deploy +2 standby buses + Short-Turn Loop on Route 21G (Tambaram Depot TB)",
+            "why": "GST Road evening peak between Anna University → Guindy TVK Estate → Chromepet reaches 146.5% capacity pressure.",
+            "response": "Dispatch +2 standby buses from Tambaram Depot (TB) and operate 1 short-turn shuttle loop between Guindy Hub and Tambaram.",
+            "assumptions": "Tambaram Depot (TB) holds 138 active fleet coaches with immediate GST Road turnaround access.",
+            "effect": "Adds +130 seats in the 18:00–19:00 window and lowers GST Road crush pressure from 146.5% to 99.2%.",
+        },
+        {
+            "id": "ALT-TN-29C",
+            "rec_type": "CORRIDOR_CONSOLIDATOR",
+            "route": "29C",
+            "short_route": "29A",
+            "hour": 18,
+            "time_window": "18:00–19:00",
+            "depot": "T. Nagar Depot (TN)",
+            "depot_code": "TN",
+            "affected_depot_codes": ["TN", "PR"],
+            "master_depot_tag": "Consolidated Master Depot: T. Nagar Depot (TN)",
+            "corridor_name": "Perambur – Chetpet – Sterling Road – T. Nagar – Besant Nagar",
+            "pressure_pct": 136.8,
+            "post_pressure_pct": 94.0,
+            "active_bus_runs": 5,
+            "extra_buses": 2,
+            "risk": "H",
+            "title": "Corridor Consolidator: Deploy +2 buses from T. Nagar Depot (TN) on Route 29C",
+            "why": "Cross-city commuter surge between Sterling Road → Valluvar Kottam → T. Nagar reaches 136.8% capacity pressure.",
+            "response": "Deploy +2 buses from T. Nagar Master Depot (TN) on Route 29C to clear both Perambur and T. Nagar stage queues concurrently.",
+            "assumptions": "Centralized dispatch at T. Nagar Terminus eliminates deadhead mileage.",
+            "effect": "Restores 8-minute headway regularity and drops stage occupancy below 62 pax/bus.",
+        },
+    ]
+    recs.extend(curated_depot_recs)
+
+    depot_clean = (depot if isinstance(depot, str) else "ALL").strip().upper()
+    if depot_clean and depot_clean != "ALL":
+        recs = [
+            r for r in recs
+            if r.get("depot_code") == depot_clean
+            or depot_clean in (r.get("affected_depot_codes") or [])
+        ]
 
     return recs
 
@@ -1793,7 +2124,7 @@ def simulate_dispatch(req: SimulateInput) -> Dict[str, Any]:
     base_pred = int(round(t3["predicted_demand"]))
     base_trips = int(t3["active_trips"])
     base_cap = int(t3["capacity"])
-    base_seg = str(t3["seg"])
+    base_seg = str(t3.get("seg") or "MMHHM")
     base_pressure = float(t3["demand_pressure_pct"])
 
     act = (req.action or "add").lower()
@@ -1834,6 +2165,10 @@ def simulate_dispatch(req: SimulateInput) -> Dict[str, Any]:
         "base_risk": risk_code(base_pressure),
         "new_risk": risk_code(new_pressure),
         "summary": summary,
+        "stops": t3.get("stops", []),
+        "segment_paths": t3.get("segment_paths", []),
+        "origin_stop": t3.get("origin_stop", ""),
+        "destination_stop": t3.get("destination_stop", ""),
     }
 
 
