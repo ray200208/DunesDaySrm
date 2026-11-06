@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FlowLink — Chennai Transit Operations</title>
 <style>
-:root {
+:root, [data-theme="dark"] {
   --bg-grad: radial-gradient(ellipse at 50% -10%, #2f170c 0%, #170d07 45%, #0a0503 100%);
   --bg-elev: rgba(20, 12, 8, 0.94);
   --surf: #140c08;
@@ -40,6 +40,111 @@
   --sea-ink: #8c766b;
   color-scheme: dark;
   box-sizing: border-box;
+}
+
+[data-theme="light"] {
+  --bg-grad: radial-gradient(ellipse at 50% -10%, #FFF7ED 0%, #F8FAFC 45%, #F1F5F9 100%);
+  --bg-elev: rgba(255, 255, 255, 0.96);
+  --surf: #FFFFFF;
+  --surf-sub: #F8FAFC;
+  --surf-hover: #F1F5F9;
+  --line: rgba(15, 23, 42, 0.10);
+  --line-strong: rgba(249, 115, 22, 0.35);
+  --ink: #0F172A;
+  --mut: #64748B;
+  --dim: #94A3B8;
+  --ac: #EA580C;
+  --ac-hover: #C2410C;
+  --ac-soft: rgba(234, 88, 12, 0.10);
+  --cyan: #0284C7;
+  --cyan-soft: rgba(2, 132, 199, 0.10);
+  --h: #DC2626;
+  --m: #D97706;
+  --l: #059669;
+  --bh-bg: rgba(220, 38, 38, 0.10);
+  --bh-border: rgba(220, 38, 38, 0.30);
+  --bm-bg: rgba(217, 119, 6, 0.10);
+  --bm-border: rgba(217, 119, 6, 0.30);
+  --bl-bg: rgba(5, 150, 105, 0.10);
+  --bl-border: rgba(5, 150, 105, 0.30);
+  --alert-bg: rgba(254, 242, 242, 0.95);
+  --alert-line: rgba(239, 68, 68, 0.35);
+  --sim-bg: rgba(255, 247, 237, 0.95);
+  --sim-line: rgba(249, 115, 22, 0.45);
+  --crush-row: rgba(254, 226, 226, 0.55);
+  --sea: #E0F2FE;
+  --sea-line: #BAE6FD;
+  --sea-ink: #0369A1;
+  color-scheme: light;
+}
+
+[data-theme="light"] .map {
+  background: radial-gradient(circle at 50% 35%, #FFFFFF 0%, #F8FAFC 100%);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+}
+[data-theme="light"] .auth-card {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.10), 0 0 32px rgba(249, 115, 22, 0.08);
+}
+[data-theme="light"] #mapTooltip {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  color: var(--ink);
+}
+[data-theme="light"] .card:hover {
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08), 0 0 24px rgba(249, 115, 22, 0.08);
+}
+[data-theme="light"] .tile:hover {
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+}
+[data-theme="light"] dialog::backdrop {
+  background: rgba(15, 23, 42, 0.40);
+}
+[data-theme="light"] .empty {
+  background: rgba(241, 245, 249, 0.85);
+  color: var(--mut);
+}
+[data-theme="light"] .xai-panel {
+  background: radial-gradient(circle at 10% 10%, rgba(2, 132, 199, 0.06) 0%, #FFFFFF 100%) !important;
+  border-color: rgba(2, 132, 199, 0.30) !important;
+}
+[data-theme="light"] .splash-overlay {
+  background: radial-gradient(circle at 50% 45%, #F8FAFC 0%, #E2E8F0 65%, #CBD5E1 100%);
+}
+[data-theme="light"] .splash-bar-track {
+  background: rgba(15, 23, 42, 0.10);
+}
+[data-theme="light"] .b-H { color: #B91C1C; }
+[data-theme="light"] .b-M { color: #B45309; }
+[data-theme="light"] .b-L { color: #047857; }
+[data-theme="light"] .tile b.val-h { color: #DC2626; }
+[data-theme="light"] .tile b.val-m { color: #D97706; }
+[data-theme="light"] .all-clear-card {
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, #FFFFFF 100%);
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
+}
+
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line);
+  background: var(--surf);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.theme-toggle-btn:hover {
+  border-color: var(--line-strong);
+  background: var(--surf-hover);
+  color: var(--ac);
 }
 * { box-sizing: border-box; }
 body {
@@ -833,15 +938,15 @@ function FlowLinkLogoSVG(size = 44) {
         <stop offset="100%" stop-color="#06B6D4"/>
       </linearGradient>
     </defs>
-    <rect x="4" y="4" width="56" height="56" rx="16" fill="#0F172A" stroke="url(#ddGrad)" stroke-width="2.5"/>
+    <rect x="4" y="4" width="56" height="56" rx="16" fill="var(--surf-sub)" stroke="url(#ddGrad)" stroke-width="2.5"/>
     <circle cx="32" cy="32" r="21" stroke="#06B6D4" stroke-width="1.4" stroke-dasharray="4 3" opacity="0.75"/>
     <path d="M32 9 L35 15 L29 15 Z" fill="#F97316"/>
     <path d="M32 55 L35 49 L29 49 Z" fill="#06B6D4"/>
-    <rect x="19" y="18" width="26" height="26" rx="6" fill="#1E293B" stroke="#F97316" stroke-width="2"/>
+    <rect x="19" y="18" width="26" height="26" rx="6" fill="var(--surf)" stroke="#F97316" stroke-width="2"/>
     <rect x="22" y="22" width="20" height="9" rx="2" fill="#06B6D4" opacity="0.88"/>
     <circle cx="25" cy="38" r="2.3" fill="#F97316"/>
     <circle cx="39" cy="38" r="2.3" fill="#F97316"/>
-    <path d="M22 44 L22 48 M42 44 L42 48" stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M22 44 L22 48 M42 44 L42 48" stroke="var(--dim)" stroke-width="2.2" stroke-linecap="round"/>
   </svg>`;
 }
 
@@ -912,7 +1017,11 @@ const Badge = (k, full = false) => {
 
 const isSessionAuthed = sessionStorage.getItem('flowlink_authed') === '1' || sessionStorage.getItem('dd_authed') === '1';
 
+const savedTheme = localStorage.getItem('flowlink_theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+
 const S = {
+  theme: savedTheme,
   authed: isSessionAuthed,
   splash: false,
   loginErr: '',
@@ -953,6 +1062,11 @@ const S = {
 /* ============ 1. Gatekeeper Login View & Animated Brand Splash ============ */
 function LoginView() {
   return `<div class="auth-wrap">
+    <div style="position:fixed;top:20px;right:24px;z-index:40">
+      <button class="theme-toggle-btn" data-a="toggletheme" title="Switch to ${S.theme === 'light' ? 'Dark' : 'Light'} Mode" aria-label="Toggle theme">
+        ${S.theme === 'light' ? '🌙 Dark' : '☀️ Light'}
+      </button>
+    </div>
     <div class="auth-card">
       <div class="auth-logo-box">
         ${FlowLinkLogoSVG(54)}
@@ -1019,6 +1133,9 @@ function Header() {
     <select id="hour" title="Operating Hour (00:00–23:00)">
       ${HOURS_24.map(o => `<option value="${o.h}" ${S.hour == o.h ? 'selected' : ''}>${o.label}</option>`).join('')}
     </select>
+    <button class="theme-toggle-btn" data-a="toggletheme" title="Switch to ${S.theme === 'light' ? 'Dark' : 'Light'} Mode" aria-label="Toggle theme">
+      ${S.theme === 'light' ? '🌙 Dark' : '☀️ Light'}
+    </button>
     <span class="chip" style="padding:5px 10px;color:var(--ink);border-style:solid">👤 admin (Ops Lead)</span>
     <button class="btn sm" data-a="logout" title="Sign out of FlowLink Command Center">Sign out ↪</button>
   </header>`;
@@ -1109,7 +1226,7 @@ function MapView(r, seg, o = {}) {
 
     n += `<g class="map-stop-group" ${stopTip}>
       <circle class="map-stop-ring" cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${isMini ? 5 : 8}" fill="none" stroke="var(--ac)" stroke-width="1.2"/>
-      <circle class="map-stop-dot" cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${isMini ? 3 : 5}" fill="#140C08" stroke="#FFFFFF" stroke-width="${isMini ? 1.5 : 2}"/>
+      <circle class="map-stop-dot" cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${isMini ? 3 : 5}" fill="var(--surf)" stroke="var(--ink)" stroke-width="${isMini ? 1.5 : 2}"/>
     </g>`;
 
     if (!isMini) {
@@ -1120,8 +1237,8 @@ function MapView(r, seg, o = {}) {
       const pillW = Math.min(180, Math.max(48, charLen * 6.5 + 14));
 
       n += `<g class="map-stop-label" pointer-events="none">
-        <rect x="${(sx - pillW / 2).toFixed(1)}" y="${(labelY - 11).toFixed(1)}" width="${pillW}" height="17" rx="3" fill="rgba(10,5,3,0.88)" stroke="rgba(249,115,22,0.25)" stroke-width="1"/>
-        <text x="${sx.toFixed(1)}" y="${(labelY + 2).toFixed(1)}" text-anchor="middle" font-size="11px" font-weight="600" fill="#F8FAFC" font-family="'Inter', system-ui, sans-serif">${esc(nameStr)}</text>
+        <rect x="${(sx - pillW / 2).toFixed(1)}" y="${(labelY - 11).toFixed(1)}" width="${pillW}" height="17" rx="3" fill="var(--bg-elev)" stroke="var(--line-strong)" stroke-width="1"/>
+        <text x="${sx.toFixed(1)}" y="${(labelY + 2).toFixed(1)}" text-anchor="middle" font-size="11px" font-weight="600" fill="var(--ink)" font-family="'Inter', system-ui, sans-serif">${esc(nameStr)}</text>
       </g>`;
     }
   });
@@ -1329,7 +1446,7 @@ function Tier2RoutePage() {
 
 /* ============ XAI Panel (Used on Tier 3 & Recommendations) ============ */
 function XAIPanel(routeId, depotCode, hourVal) {
-  return `<div class="panel" style="margin-top:16px;border-color:rgba(6, 182, 212, 0.35);background:radial-gradient(circle at 10% 10%, rgba(6, 182, 212, 0.08) 0%, rgba(19, 24, 34, 0.95) 100%)">
+  return `<div class="panel xai-panel" style="margin-top:16px;border-color:rgba(6, 182, 212, 0.35);background:radial-gradient(circle at 10% 10%, rgba(6, 182, 212, 0.08) 0%, rgba(19, 24, 34, 0.95) 100%)">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
       <h2 style="margin:0">Ask about this recommendation <span class="chip" style="color:#38BDF8;border-color:rgba(56, 189, 248, 0.45);background:rgba(6, 182, 212, 0.12)">⚡ Gemma 4 26B A4B Active</span></h2>
       <span class="chip" style="color:#F97316;border-color:rgba(249, 115, 22, 0.45)">OpenRouter Live</span>
@@ -1712,6 +1829,7 @@ function view() {
 }
 
 function render() {
+  document.documentElement.setAttribute('data-theme', S.theme);
   const a = document.getElementById('app');
   a.innerHTML = view();
   const d = document.getElementById('dlg');
@@ -1851,8 +1969,8 @@ document.addEventListener('mouseover', e => {
   const name = segEl.getAttribute('data-tip-seg') || '';
   const pax = segEl.getAttribute('data-tip-pax') || '';
   const risk = segEl.getAttribute('data-tip-risk') || '';
-  mapTipEl.innerHTML = `<div style="font-weight:700;color:#F8FAFC">${esc(name)}</div>
-    <div class="mono" style="color:#38BDF8;margin-top:2px">${esc(pax)} · <span style="color:#F97316">${esc(risk)}</span></div>`;
+  mapTipEl.innerHTML = `<div style="font-weight:700;color:var(--ink)">${esc(name)}</div>
+    <div class="mono" style="color:var(--cyan);margin-top:2px">${esc(pax)} · <span style="color:#F97316">${esc(risk)}</span></div>`;
   mapTipEl.classList.add('vis');
 });
 document.addEventListener('mousemove', e => {
@@ -1872,6 +1990,12 @@ document.addEventListener('click', async e => {
   if (!b) return;
   const a = b.dataset.a, v = b.dataset.v;
 
+  if (a == 'toggletheme') {
+    S.theme = S.theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem('flowlink_theme', S.theme);
+    document.documentElement.setAttribute('data-theme', S.theme);
+    return render();
+  }
   if (a == 'logout') {
     sessionStorage.removeItem('flowlink_authed');
     sessionStorage.removeItem('dd_authed');
