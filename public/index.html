@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>DunesDay Transit Core // CUMTA GRID — MTC Chennai Operations</title>
+<title>FlowLink — Chennai Transit Operations</title>
 <style>
 :root {
   --bg-grad: radial-gradient(ellipse at 50% -10%, #2f170c 0%, #170d07 45%, #0a0503 100%);
@@ -824,8 +824,8 @@ const MODES = {
   MRTS: { label: 'MRTS Suburban network', groupLabel: 'Line', noun: 'line' }
 };
 
-/* ============ Stylized DunesDay Transit Core Geometric Emblem SVG ============ */
-function DunesDayLogoSVG(size = 44) {
+/* ============ Stylized FlowLink Geometric Emblem SVG ============ */
+function FlowLinkLogoSVG(size = 44) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <defs>
       <linearGradient id="ddGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
@@ -910,7 +910,7 @@ const Badge = (k, full = false) => {
   return `<span class="badge b-${k || 'L'}"><i aria-hidden="true">${rk.g}</i>${full ? rk.l : rk.short}</span>`;
 };
 
-const isSessionAuthed = sessionStorage.getItem('dd_authed') === '1';
+const isSessionAuthed = sessionStorage.getItem('flowlink_authed') === '1' || sessionStorage.getItem('dd_authed') === '1';
 
 const S = {
   authed: isSessionAuthed,
@@ -955,10 +955,10 @@ function LoginView() {
   return `<div class="auth-wrap">
     <div class="auth-card">
       <div class="auth-logo-box">
-        ${DunesDayLogoSVG(54)}
+        ${FlowLinkLogoSVG(54)}
         <div>
-          <h1 class="auth-title">DunesDay Transit Core</h1>
-          <p class="auth-sub">Marina Ops // CUMTA Unified Command Grid</p>
+          <h1 class="auth-title">FlowLink</h1>
+          <p class="auth-sub">FlowLink // CUMTA Unified Command Grid</p>
         </div>
       </div>
       ${S.loginErr ? `<div class="auth-err" role="alert">⚠️ ${esc(S.loginErr)}</div>` : ''}
@@ -985,10 +985,10 @@ function BrandSplashView() {
       <div class="splash-emblem-wrap">
         <div class="splash-ring"></div>
         <div class="splash-ring-2"></div>
-        ${DunesDayLogoSVG(92)}
+        ${FlowLinkLogoSVG(92)}
       </div>
-      <div class="cumta-badge" style="margin-bottom:8px">DUNESDAY TRANSIT CORE // CUMTA GRID</div>
-      <h1 style="font-size:24px;margin:0 0 6px">Initializing MTC Operations Command</h1>
+      <div class="cumta-badge" style="margin-bottom:8px">FLOWLINK // CUMTA GRID</div>
+      <h1 style="font-size:24px;margin:0 0 6px">Initializing FlowLink Operations Command</h1>
       <p class="mut mono" style="margin:0;font-size:12px">Syncing 33 Depots · 1,437 Routes · XGBoost Demand Cube (R²=0.81)</p>
       <div class="splash-bar-track"><div class="splash-bar-fill"></div></div>
     </div>
@@ -999,8 +999,8 @@ function BrandSplashView() {
 function Header() {
   return `<header class="top">
     <div class="brand-wrap">
-      ${DunesDayLogoSVG(34)}
-      <span class="brand-title">Marina Ops</span>
+      ${FlowLinkLogoSVG(34)}
+      <span class="brand-title">FlowLink</span>
       <span class="cumta-badge">CUMTA GRID</span>
     </div>
     <div class="seg" role="group" aria-label="Transport mode">
@@ -1020,7 +1020,7 @@ function Header() {
       ${HOURS_24.map(o => `<option value="${o.h}" ${S.hour == o.h ? 'selected' : ''}>${o.label}</option>`).join('')}
     </select>
     <span class="chip" style="padding:5px 10px;color:var(--ink);border-style:solid">👤 admin (Ops Lead)</span>
-    <button class="btn sm" data-a="logout" title="Sign out of DunesDay Command Center">Sign out ↪</button>
+    <button class="btn sm" data-a="logout" title="Sign out of FlowLink Command Center">Sign out ↪</button>
   </header>`;
 }
 
@@ -1873,6 +1873,7 @@ document.addEventListener('click', async e => {
   const a = b.dataset.a, v = b.dataset.v;
 
   if (a == 'logout') {
+    sessionStorage.removeItem('flowlink_authed');
     sessionStorage.removeItem('dd_authed');
     S.authed = false;
     S.splash = false;
@@ -2026,6 +2027,7 @@ document.addEventListener('submit', async e => {
       S.loginErr = '';
       S.authed = true;
       S.splash = true;
+      sessionStorage.setItem('flowlink_authed', '1');
       sessionStorage.setItem('dd_authed', '1');
       render();
       initLoad();

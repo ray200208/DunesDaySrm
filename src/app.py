@@ -1464,7 +1464,7 @@ def call_openrouter_xai(prompt: str, api_key: str) -> Optional[str]:
                 {
                     "role": "system",
                     "content": (
-                        "You are the DunesDay Explainable AI (XAI) Transit Operations Co-Pilot for MTC Chennai. "
+                        "You are the FlowLink Explainable AI (XAI) Transit Operations Co-Pilot for MTC Chennai. "
                         "Answer in 2 to 4 crisp, authoritative, data-backed sentences citing the exact passenger counts, "
                         "65-seat bus capacity, stop-to-stop stage bottlenecks, and depot details provided."
                     ),
@@ -1482,7 +1482,7 @@ def call_openrouter_xai(prompt: str, api_key: str) -> Optional[str]:
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
                     "HTTP-Referer": "http://127.0.0.1:8000",
-                    "X-Title": "DunesDay MTC XAI Engine",
+                    "X-Title": "FlowLink MTC XAI Engine",
                 },
                 method="POST",
             )
@@ -1550,7 +1550,7 @@ def build_xai_explanation(req: XAIExplainInput) -> Dict[str, Any]:
     api_key = load_env_key("OPENROUTER_API_KEY")
     if api_key:
         context_prompt = (
-            f"You are the DunesDay Explainable AI (XAI) Transit Operations Co-Pilot for MTC Chennai.\n"
+            f"You are the FlowLink Explainable AI (XAI) Transit Operations Co-Pilot for MTC Chennai.\n"
             f"CORRIDOR TELEMETRY:\n"
             f"- Route: {route_id} ({depot_name}) | Span: {t3['name']} ({t3['route_km']} km, {t3['stage_span']} stages)\n"
             f"- Operating Window: {day_name}, {time_win} ({t3['hour']:02d}:00-{(t3['hour']+1)%24:02d}:00)\n"
@@ -1645,7 +1645,7 @@ def build_xai_explanation(req: XAIExplainInput) -> Dict[str, Any]:
         "day_of_week": t3["day_of_week"],
         "hour": t3["hour"],
         "question_key": q_key,
-        "source": "DunesDay XAI Deterministic Engine (Offline Grounded)",
+        "source": "FlowLink XAI Deterministic Engine (Offline Grounded)",
         "answer": ans,
         "metrics": {
             "predicted_pax": pred_pax,
@@ -1674,7 +1674,7 @@ async def lifespan(app_instance: FastAPI):
 
 
 app = FastAPI(
-    title="DunesDay — Dynamic 3-Tier Transit Operations & XAI Engine",
+    title="FlowLink — Dynamic 3-Tier Transit Operations & XAI Engine",
     version="4.0.0",
     lifespan=lifespan,
 )
@@ -2188,7 +2188,7 @@ if __name__ == "__main__":
     import uvicorn
 
     init_duckdb_engine()
-    print("DunesDay Explainable AI Operations Server active at http://127.0.0.1:8000", flush=True)
+    print("FlowLink Explainable AI Operations Server active at http://127.0.0.1:8000", flush=True)
 
     if "--self-test" in sys.argv:
         res_all = get_routes(mode="MTC", depot="ALL", day_of_week=0, hour=8)

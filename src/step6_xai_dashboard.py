@@ -20,7 +20,7 @@ if __name__ == "__main__":
     import uvicorn
 
     init_duckdb_engine()
-    print("DunesDay Explainable AI Operations Server active at http://127.0.0.1:8000", flush=True)
+    print("FlowLink Explainable AI Operations Server active at http://127.0.0.1:8000", flush=True)
     if "--self-test" in sys.argv:
         res = get_routes(mode="MTC", depot="ALL", day_of_week=0, hour=8)
         t2 = get_tier2_route("KA:102K", day_of_week=3)

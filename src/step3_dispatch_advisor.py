@@ -334,7 +334,7 @@ def call_openrouter_llm(
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://dunesdaysrm.local",
+            "HTTP-Referer": "https://flowlink.local",
             "X-Title": "MTC Smart Transit Dispatch Advisor",
         },
         method="POST",

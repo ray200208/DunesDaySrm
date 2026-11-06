@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Marina Ops — Chennai transit dashboard (demo)</title>
+<title>FlowLink — Chennai transit dashboard (demo)</title>
 <style>
 :root{--h:#e0142c;--m:#e8790c;--l:#08938a;--ink:#14181f;--mut:#5b6472;--line:#e3e6eb;--bg:#f6f7f9;--ac:#1f3a5f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
@@ -107,7 +107,7 @@ const S={screen:'login',mode:'MTC',win:3,group:'All',route:null,row:null,tab:'ne
 const rt=id=>S.items.find(r=>r.id==id);
 
 /* ============ components ============ */
-function Header(){return `<header class="top"><span class="brand">Marina Ops</span>
+function Header(){return `<header class="top"><span class="brand">FlowLink</span>
 <div class="seg" role="group" aria-label="Transport mode">${Object.keys(DATA).map(m=>`<button data-a="mode" data-v="${m}" aria-pressed="${S.mode==m}">${m}</button>`).join('')}</div>
 <nav class="nav" aria-label="Sections"><button data-a="tab" data-v="net" ${S.tab=='net'?'aria-current="page"':''}>Network</button><button data-a="tab" data-v="rec" ${S.tab=='rec'?'aria-current="page"':''}>Recommendations</button></nav><span class="sp"></span>
 <label class="sr" for="win">Time window</label><select id="win">${WINS.map((w,i)=>`<option value="${i}" ${S.win==i?'selected':''}>${w}</option>`).join('')}</select>
@@ -177,7 +177,7 @@ return `<dialog id="dlg" aria-labelledby="dt">${S.sent?`<h2 id="dt">Report submi
 <label for="f3">Time</label><input id="f3" name="time" type="time" value="${t}" required><label for="f4">Description</label><textarea id="f4" name="desc" rows="3" required></textarea>
 <p style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn" data-a="closemodal">Cancel</button><button class="btn pri">Submit report</button></p></form>`}</dialog>`}
 
-function Login(){return `<div class="login"><h1>Marina Ops</h1><p class="mut">Chennai public transport operations · demo with fictional data</p><div class="seg" role="group" aria-label="Choose transport mode">${Object.keys(DATA).map(m=>`<button data-a="mode" data-v="${m}" aria-pressed="${S.mode==m}">${m}</button>`).join('')}</div><button class="btn pri" data-a="enter" style="width:100%;padding:10px">Enter demo</button></div>`}
+function Login(){return `<div class="login"><h1>FlowLink</h1><p class="mut">Chennai public transport operations · demo with fictional data</p><div class="seg" role="group" aria-label="Choose transport mode">${Object.keys(DATA).map(m=>`<button data-a="mode" data-v="${m}" aria-pressed="${S.mode==m}">${m}</button>`).join('')}</div><button class="btn pri" data-a="enter" style="width:100%;padding:10px">Enter demo</button></div>`}
 
 /* ============ app shell ============ */
 function view(){if(S.screen=='login')return Login();
